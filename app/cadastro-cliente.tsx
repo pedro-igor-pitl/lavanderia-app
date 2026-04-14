@@ -8,10 +8,12 @@ import {
 } from 'react-native';
 import { useState } from 'react';
 import { useApp } from '../components/AppContext';
+import { useRouter } from 'expo-router';
 
 export default function CadastroCliente() {
   const { pecas = [] } = useApp();
 
+  const router = useRouter();
   const [nome, setNome] = useState('');
   const [email, setEmail] = useState('');
   const [telefone, setTelefone] = useState('');
@@ -172,6 +174,10 @@ export default function CadastroCliente() {
     onPress={() => setPeriodo('mensal')}
   >
     <Text style={styles.radioText}>Mensal</Text>
+  </TouchableOpacity>
+
+    <TouchableOpacity onPress={() => router.push('/cadastro-periodo')}>
+    <Text style={styles.radioText}>+ Novo</Text>
   </TouchableOpacity>
 </View>
 

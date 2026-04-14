@@ -1,21 +1,31 @@
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, FlatList } from 'react-native';
+import { useRouter } from 'expo-router';
+import { useApp } from '../../components/AppContext';
 
 export default function Financeiro() {
+  const { periodos } = useApp();
+  const router = useRouter();
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Financeiro</Text>
 
-      <View style={styles.card}>
-        <Text style={styles.text}>🟡 João Silva - R$ 320</Text>
-      </View>
+      <FlatList
+        data={periodos}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => (
+          <View style={styles.card}>
+            <Text style={styles.text}>{item.nome}</Text>
+          </View>
+        )}
+      />
 
-      <View style={styles.card}>
-        <Text style={styles.text}>🔴 Maria - R$ 540</Text>
-      </View>
-
-      <View style={styles.card}>
-        <Text style={styles.text}>🟢 Hotel - OK</Text>
-      </View>
+      <TouchableOpacity
+        style={styles.button}
+        onPress={() => router.push('/cadastro-periodo')}
+      >
+        <Text style={styles.buttonText}>+ Novo Período</Text>
+      </TouchableOpacity>
     </View>
   );
 }
@@ -27,18 +37,28 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   title: {
-    color: '#FFFFFF',
+    color: '#fff',
     fontSize: 22,
     marginBottom: 20,
   },
   card: {
     backgroundColor: '#1C1C1E',
     padding: 16,
-    borderRadius: 12,
+    borderRadius: 10,
     marginBottom: 10,
   },
   text: {
-    color: '#FFFFFF',
-    fontSize: 16,
+    color: '#fff',
+  },
+  button: {
+    backgroundColor: '#2563EB',
+    padding: 16,
+    borderRadius: 10,
+    marginTop: 20,
+  },
+  buttonText: {
+    color: '#fff',
+    textAlign: 'center',
+    fontWeight: '600',
   },
 });
