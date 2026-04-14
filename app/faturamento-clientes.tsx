@@ -13,21 +13,27 @@ export default function FaturamentoClientes() {
       <FlatList
         data={clientes}
         keyExtractor={(item) => item.id}
+        ListEmptyComponent={
+          <Text style={styles.empty}>
+            Nenhum cliente cadastrado
+          </Text>
+        }
         renderItem={({ item }) => (
           <TouchableOpacity
             style={styles.card}
-            onPress={() => router.push(`/cliente-relatorios?id=${item.id}`)}
+            onPress={() =>
+              router.push(`/faturamento-periodo?clienteId=${item.id}`)
+            }
           >
             <Text style={styles.text}>{item.nome}</Text>
+
+            {/* 🔥 INFO EXTRA */}
+            <Text style={styles.sub}>
+              Tipo: {item.tipo} | Período: {item.periodo}
+            </Text>
           </TouchableOpacity>
         )}
       />
-
-      {clientes.length === 0 && (
-        <Text style={{ color: '#777' }}>
-          Nenhum cliente cadastrado
-        </Text>
-      )}
     </View>
   );
 }
@@ -51,5 +57,16 @@ const styles = StyleSheet.create({
   },
   text: {
     color: '#fff',
+    fontSize: 16,
+  },
+  sub: {
+    color: '#777',
+    marginTop: 5,
+    fontSize: 12,
+  },
+  empty: {
+    color: '#777',
+    textAlign: 'center',
+    marginTop: 20,
   },
 });

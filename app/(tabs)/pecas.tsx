@@ -1,19 +1,27 @@
-import { View, Text, TextInput, TouchableOpacity, FlatList, StyleSheet } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  FlatList,
+  StyleSheet,
+} from 'react-native';
 import { useState } from 'react';
+import { useApp } from '../../components/AppContext';
 
 export default function Pecas() {
+  const { pecas, adicionarPeca } = useApp();
   const [nome, setNome] = useState('');
-  const [lista, setLista] = useState<any[]>([]);
 
-  const adicionarPeca = () => {
+  const adicionar = () => {
     if (!nome.trim()) return;
 
-    const novaPeca = {
+    adicionarPeca({
       id: Date.now().toString(),
       nome: nome.trim(),
-    };
+      preco: '', // padrão vazio (preço é por cliente)
+    });
 
-    setLista([...lista, novaPeca]);
     setNome('');
   };
 
@@ -29,13 +37,16 @@ export default function Pecas() {
         style={styles.input}
       />
 
-      <TouchableOpacity style={styles.button} onPress={adicionarPeca}>
+      <TouchableOpacity style={styles.button} onPress={adicionar}>
         <Text style={styles.buttonText}>Adicionar</Text>
       </TouchableOpacity>
 
       <FlatList
-        data={lista}
+        data={pecas}
         keyExtractor={(item) => item.id}
+        ListEmptyComponent={
+          <Text style={styles.empty}>Nenhuma peça cadastrada</Text>
+        }
         renderItem={({ item }) => (
           <View style={styles.card}>
             <Text style={styles.text}>{item.nome}</Text>
@@ -84,5 +95,10 @@ const styles = StyleSheet.create({
   text: {
     color: '#fff',
     fontSize: 16,
+  },
+  empty: {
+    color: '#777',
+    textAlign: 'center',
+    marginTop: 20,
   },
 });
