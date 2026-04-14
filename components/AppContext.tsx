@@ -11,7 +11,10 @@ type AppContextType = {
   adicionarPeca: (peca: Peca) => void;
 };
 
-const AppContext = createContext<AppContextType>({} as AppContextType);
+const AppContext = createContext({
+  pecas: [],
+  adicionarPeca: (peca: any) => {},
+});
 
 export function AppProvider({ children }: any) {
   const [pecas, setPecas] = useState<Peca[]>([]);
