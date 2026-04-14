@@ -3,7 +3,6 @@ import { createContext, useContext, useState } from 'react';
 type Peca = {
   id: string;
   nome: string;
-  preco: string;
 };
 
 type Periodo = {
@@ -11,26 +10,31 @@ type Periodo = {
   nome: string;
 };
 
+type Cliente = {
+  id: string;
+  nome: string;
+  tipo: 'peso' | 'peca';
+  valorKg?: string;
+  pecas?: any[];
+  periodo: string;
+};
+
 type AppContextType = {
   pecas: Peca[];
   adicionarPeca: (peca: Peca) => void;
+
+  clientes: Cliente[];
+  adicionarCliente: (cliente: Cliente) => void;
+
   periodos: Periodo[];
   adicionarPeriodo: (periodo: Periodo) => void;
 };
 
-const AppContext = createContext<AppContextType>({
-  pecas: [],
-  adicionarPeca: () => {},
-  periodos: [],
-  adicionarPeriodo: () => {},
-});
+const AppContext = createContext<AppContextType>({} as AppContextType);
 
 export function AppProvider({ children }: any) {
   const [pecas, setPecas] = useState<Peca[]>([]);
-
-  const adicionarPeca = (peca: Peca) => {
-    setPecas((prev) => [...prev, peca]);
-  };
+  const [clientes, setClientes] = useState<Cliente[]>([]);
 
   const [periodos, setPeriodos] = useState<Periodo[]>([
     { id: 'diario', nome: 'Diário' },
@@ -38,17 +42,28 @@ export function AppProvider({ children }: any) {
     { id: 'mensal', nome: 'Mensal' },
   ]);
 
+  const adicionarPeca = (peca: Peca) => {
+    setPecas(prev => [...prev, peca]);
+  };
+
+  const adicionarCliente = (cliente: Cliente) => {
+    setClientes(prev => [...prev, cliente]);
+  };
+
   const adicionarPeriodo = (periodo: Periodo) => {
-    const existe = periodos.find(p => p.id === periodo.id);
-
-    if (existe) return;
-
     setPeriodos(prev => [...prev, periodo]);
   };
 
   return (
     <AppContext.Provider
-      value={{ pecas, adicionarPeca, periodos, adicionarPeriodo }}
+      value={{
+        pecas,
+        adicionarPeca,
+        clientes,
+        adicionarCliente,
+        periodos,
+        adicionarPeriodo,
+      }}
     >
       {children}
     </AppContext.Provider>

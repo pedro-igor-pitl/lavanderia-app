@@ -1,10 +1,27 @@
-import { View, Text, TouchableOpacity, StyleSheet, Image, Alert } from 'react-native';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  Image,
+  Alert,
+  TextInput,
+  ScrollView,
+} from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useState } from 'react';
+import { useApp } from '../../components/AppContext';
 
 export default function Coleta() {
+  const { clientes = [] } = useApp(); // fallback seguro
+
   const [image, setImage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [modoManual, setModoManual] = useState(false);
+
+  const [clienteSelecionado, setClienteSelecionado] = useState<any>(null);
+  const [peso, setPeso] = useState('');
+  const [pecas, setPecas] = useState<any[]>([]);
 
   // 📸 Tirar foto
   const takePhoto = async () => {
@@ -17,7 +34,6 @@ export default function Coleta() {
 
     const result = await ImagePicker.launchCameraAsync({
       quality: 0.7,
-      base64: false,
     });
 
     if (!result.canceled) {
@@ -36,7 +52,7 @@ export default function Coleta() {
     }
   };
 
-  // 🚀 Enviar para backend
+  // 🚀 Upload
   const uploadImage = async () => {
     if (!image) {
       Alert.alert('Erro', 'Selecione uma imagem primeiro');
@@ -53,19 +69,12 @@ export default function Coleta() {
         type: 'image/jpeg',
       } as any);
 
-      const response = await fetch('http://SEU_IP:3000/upload', {
+      await fetch('http://SEU_IP:3000/upload', {
         method: 'POST',
         body: formData,
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
       });
 
-      const data = await response.json();
-
       Alert.alert('Sucesso', 'Imagem enviada!');
-      console.log(data);
-
     } catch (error) {
       console.log(error);
       Alert.alert('Erro', 'Falha ao enviar imagem');
@@ -74,11 +83,51 @@ export default function Coleta() {
     }
   };
 
+  // 🧠 Selecionar cliente
+  const selecionarCliente = (cliente: any) => {
+    setClienteSelecionado(cliente);
+
+    if (cliente.tipo === 'peca') {
+      setPecas(
+        cliente.pecas?.map((p: any) => ({
+          ...p,
+          quantidade: '',
+        })) || []
+      );
+    } else {
+      setPecas([]);
+    }
+  };
+
+  // 💾 Salvar manual
+  const salvarManual = () => {
+    if (!clienteSelecionado) {
+      Alert.alert('Erro', 'Selecione um cliente');
+      return;
+    }
+
+    if (clienteSelecionado.tipo === 'peso' && !peso) {
+      Alert.alert('Erro', 'Informe o peso');
+      return;
+    }
+
+    if (
+      clienteSelecionado.tipo === 'peca' &&
+      pecas.every(p => !p.quantidade)
+    ) {
+      Alert.alert('Erro', 'Informe ao menos uma peça');
+      return;
+    }
+
+    Alert.alert('Sucesso', 'Coleta registrada!');
+  };
+
   return (
-    <View style={styles.container}>
+    <ScrollView style={styles.container}>
       <Text style={styles.title}>Nova Coleta</Text>
 
-      {!image ? (
+      {/* ESCOLHA */}
+      {!modoManual && !image && (
         <>
           <TouchableOpacity style={styles.card} onPress={takePhoto}>
             <Text style={styles.text}>📸 Tirar Foto</Text>
@@ -87,23 +136,98 @@ export default function Coleta() {
           <TouchableOpacity style={styles.card} onPress={pickImage}>
             <Text style={styles.text}>🖼️ Galeria</Text>
           </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.card}
+            onPress={() => setModoManual(true)}
+          >
+            <Text style={styles.text}>✍️ Cadastro Manual</Text>
+          </TouchableOpacity>
         </>
-      ) : (
+      )}
+
+      {/* FOTO */}
+      {image && (
         <>
           <Image source={{ uri: image }} style={styles.preview} />
 
           <TouchableOpacity style={styles.button} onPress={uploadImage}>
             <Text style={styles.buttonText}>
-              {loading ? 'Enviando...' : 'Enviar para sistema'}
+              {loading ? 'Enviando...' : 'Enviar'}
             </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity onPress={() => setImage(null)}>
-            <Text style={styles.reset}>Escolher outra imagem</Text>
           </TouchableOpacity>
         </>
       )}
-    </View>
+
+      {/* MANUAL */}
+      {modoManual && (
+        <>
+          <Text style={styles.label}>Selecionar Cliente</Text>
+
+          {clientes.length === 0 && (
+            <Text style={{ color: '#777' }}>
+              Nenhum cliente cadastrado
+            </Text>
+          )}
+
+          {clientes.map((c: any) => (
+            <TouchableOpacity
+              key={c.id}
+              style={[
+                styles.card,
+                clienteSelecionado?.id === c.id && styles.cardSelected,
+              ]}
+              onPress={() => selecionarCliente(c)}
+            >
+              <Text style={styles.text}>{c.nome}</Text>
+            </TouchableOpacity>
+          ))}
+
+          {/* PESO */}
+          {clienteSelecionado?.tipo === 'peso' && (
+            <>
+              <Text style={styles.label}>Peso (kg)</Text>
+              <TextInput
+                style={styles.input}
+                value={peso}
+                onChangeText={setPeso}
+                keyboardType="numeric"
+              />
+            </>
+          )}
+
+          {/* PEÇAS */}
+          {clienteSelecionado?.tipo === 'peca' && (
+            <>
+              <Text style={styles.label}>Peças</Text>
+
+              {pecas.map((item, index) => (
+                <View key={item.id} style={styles.card}>
+                  <Text style={styles.text}>{item.nome}</Text>
+
+                  <TextInput
+                    style={styles.inputSmall}
+                    placeholder="Qtd"
+                    placeholderTextColor="#777"
+                    keyboardType="numeric"
+                    value={item.quantidade}
+                    onChangeText={(value) => {
+                      const novaLista = [...pecas];
+                      novaLista[index].quantidade = value;
+                      setPecas(novaLista);
+                    }}
+                  />
+                </View>
+              ))}
+            </>
+          )}
+
+          <TouchableOpacity style={styles.button} onPress={salvarManual}>
+            <Text style={styles.buttonText}>Salvar Coleta</Text>
+          </TouchableOpacity>
+        </>
+      )}
+    </ScrollView>
   );
 }
 
@@ -114,19 +238,42 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   title: {
-    color: '#FFFFFF',
+    color: '#fff',
     fontSize: 22,
     marginBottom: 20,
   },
   card: {
     backgroundColor: '#1C1C1E',
-    padding: 20,
-    borderRadius: 12,
+    padding: 16,
+    borderRadius: 10,
     marginBottom: 10,
   },
+  cardSelected: {
+    borderWidth: 1,
+    borderColor: '#2563EB',
+  },
   text: {
-    color: '#FFFFFF',
+    color: '#fff',
     fontSize: 16,
+  },
+  label: {
+    color: '#aaa',
+    marginTop: 10,
+    marginBottom: 5,
+  },
+  input: {
+    backgroundColor: '#1C1C1E',
+    color: '#fff',
+    padding: 14,
+    borderRadius: 10,
+  },
+  inputSmall: {
+    backgroundColor: '#1C1C1E',
+    color: '#fff',
+    padding: 10,
+    borderRadius: 8,
+    width: 80,
+    marginTop: 10,
   },
   preview: {
     width: '100%',
@@ -137,17 +284,12 @@ const styles = StyleSheet.create({
   button: {
     backgroundColor: '#2563EB',
     padding: 16,
-    borderRadius: 12,
-    marginBottom: 10,
+    borderRadius: 10,
+    marginTop: 20,
   },
   buttonText: {
-    color: '#FFFFFF',
+    color: '#fff',
     textAlign: 'center',
     fontWeight: '600',
-  },
-  reset: {
-    color: '#aaa',
-    textAlign: 'center',
-    marginTop: 10,
   },
 });

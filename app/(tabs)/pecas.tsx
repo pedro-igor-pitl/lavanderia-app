@@ -3,21 +3,18 @@ import { useState } from 'react';
 
 export default function Pecas() {
   const [nome, setNome] = useState('');
-  const [preco, setPreco] = useState('');
   const [lista, setLista] = useState<any[]>([]);
 
   const adicionarPeca = () => {
-    if (!nome || !preco) return;
+    if (!nome.trim()) return;
 
     const novaPeca = {
       id: Date.now().toString(),
-      nome,
-      preco,
+      nome: nome.trim(),
     };
 
     setLista([...lista, novaPeca]);
     setNome('');
-    setPreco('');
   };
 
   return (
@@ -32,15 +29,6 @@ export default function Pecas() {
         style={styles.input}
       />
 
-      <TextInput
-        placeholder="Preço por Kg (R$)"
-        placeholderTextColor="#777"
-        value={preco}
-        onChangeText={setPreco}
-        keyboardType="numeric"
-        style={styles.input}
-      />
-
       <TouchableOpacity style={styles.button} onPress={adicionarPeca}>
         <Text style={styles.buttonText}>Adicionar</Text>
       </TouchableOpacity>
@@ -51,7 +39,6 @@ export default function Pecas() {
         renderItem={({ item }) => (
           <View style={styles.card}>
             <Text style={styles.text}>{item.nome}</Text>
-            <Text style={styles.price}>R$ {item.preco}</Text>
           </View>
         )}
       />
@@ -93,15 +80,9 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 10,
     marginBottom: 10,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
   },
   text: {
     color: '#fff',
     fontSize: 16,
-  },
-  price: {
-    color: '#2563EB',
-    fontWeight: 'bold',
   },
 });

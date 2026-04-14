@@ -5,13 +5,14 @@ import {
   TouchableOpacity,
   StyleSheet,
   Alert,
+  ScrollView,
 } from 'react-native';
 import { useState } from 'react';
 import { useApp } from '../components/AppContext';
 import { useRouter } from 'expo-router';
 
 export default function CadastroCliente() {
-  const { pecas = [] } = useApp();
+  const { pecas = [], periodos = [] } = useApp();
 
   const router = useRouter();
   const [nome, setNome] = useState('');
@@ -20,40 +21,53 @@ export default function CadastroCliente() {
   const [tipo, setTipo] = useState<'peso' | 'peca' | ''>('');
   const [pecasSelecionadas, setPecasSelecionadas] = useState<any[]>([]);
   const [valorKg, setValorKg] = useState('');
-  const [periodo, setPeriodo] = useState<'diario' | 'quinzenal' | 'mensal' | ''>('');
+  const [periodo, setPeriodo] = useState('');
 
   const togglePeca = (item: any) => {
     const existe = pecasSelecionadas.find(p => p.id === item.id);
 
     if (existe) {
-      setPecasSelecionadas(
-        pecasSelecionadas.filter(p => p.id !== item.id)
+      setPecasSelecionadas(prev =>
+        prev.filter(p => p.id !== item.id)
       );
     } else {
-      setPecasSelecionadas([...pecasSelecionadas, item]);
+      setPecasSelecionadas(prev => [
+        ...prev,
+        { ...item, precoCliente: '' },
+      ]);
     }
   };
 
-    const salvar = () => {
+  const atualizarPreco = (id: string, valor: string) => {
+    setPecasSelecionadas(prev =>
+      prev.map(p =>
+        p.id === id ? { ...p, precoCliente: valor } : p
+      )
+    );
+  };
+
+  const salvar = () => {
     if (
-        !nome ||
-        !telefone ||
-        !tipo ||
-        (tipo === 'peso' && !valorKg) ||
-        (tipo === 'peca' && pecasSelecionadas.length === 0)
+      !nome ||
+      !telefone ||
+      !tipo ||
+      !periodo ||
+      (tipo === 'peso' && !valorKg) ||
+      (tipo === 'peca' &&
+        (pecasSelecionadas.length === 0 ||
+          pecasSelecionadas.some(p => !p.precoCliente)))
     ) {
-        Alert.alert('Erro', 'Preencha os campos obrigatórios (*)');
-        return;
+      Alert.alert('Erro', 'Preencha todos os campos obrigatórios');
+      return;
     }
 
     Alert.alert('Sucesso', 'Cliente cadastrado!');
-    };
+  };
 
   return (
-    <View style={styles.container}>
+    <ScrollView style={styles.container}>
       <Text style={styles.title}>Novo Cliente</Text>
 
-      {/* Nome */}
       <Text style={styles.label}>Nome *</Text>
       <TextInput
         style={styles.input}
@@ -63,7 +77,6 @@ export default function CadastroCliente() {
         onChangeText={setNome}
       />
 
-      {/* Email */}
       <Text style={styles.label}>Email</Text>
       <TextInput
         style={styles.input}
@@ -73,7 +86,6 @@ export default function CadastroCliente() {
         onChangeText={setEmail}
       />
 
-      {/* Telefone */}
       <Text style={styles.label}>Telefone *</Text>
       <TextInput
         style={styles.input}
@@ -88,104 +100,103 @@ export default function CadastroCliente() {
 
       <View style={styles.row}>
         <TouchableOpacity
-          style={[
-            styles.radio,
-            tipo === 'peso' && styles.radioActive,
-          ]}
+          style={[styles.radio, tipo === 'peso' && styles.radioActive]}
           onPress={() => setTipo('peso')}
         >
           <Text style={styles.radioText}>Peso</Text>
-
-          {tipo === 'peso' && (
-            <>
-                <Text style={styles.label}>Valor por Kg *</Text>
-                <TextInput
-                style={styles.input}
-                placeholder="Ex: 5.00"
-                placeholderTextColor="#777"
-                value={valorKg}
-                onChangeText={setValorKg}
-                keyboardType="numeric"
-                />
-            </>
-            )}
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[
-            styles.radio,
-            tipo === 'peca' && styles.radioActive,
-          ]}
+          style={[styles.radio, tipo === 'peca' && styles.radioActive]}
           onPress={() => setTipo('peca')}
         >
           <Text style={styles.radioText}>Peça</Text>
         </TouchableOpacity>
       </View>
 
-      {/* Seleção de peças */}
+      {/* KG */}
+      {tipo === 'peso' && (
+        <>
+          <Text style={styles.label}>Valor por Kg *</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Ex: 5.00"
+            placeholderTextColor="#777"
+            value={valorKg}
+            onChangeText={setValorKg}
+            keyboardType="numeric"
+          />
+        </>
+      )}
+
+      {/* Peças */}
       {tipo === 'peca' && (
         <>
           <Text style={styles.label}>Selecione as peças *</Text>
 
           {pecas.map((item) => {
-            const selecionado = pecasSelecionadas.some(
-              p => p.id === item.id
-            );
+            const selecionada = pecasSelecionadas.find(p => p.id === item.id);
 
             return (
-              <TouchableOpacity
+              <View
                 key={item.id}
                 style={[
                   styles.card,
-                  selecionado && styles.cardSelected,
+                  selecionada && styles.cardSelected,
                 ]}
-                onPress={() => togglePeca(item)}
               >
-                <Text style={styles.text}>
-                  {item.nome} - R$ {item.preco}
-                </Text>
+                <TouchableOpacity onPress={() => togglePeca(item)}>
+                  <Text style={styles.text}>
+                    {selecionada ? '☑' : '☐'} {item.nome}
+                  </Text>
+                </TouchableOpacity>
 
-                {selecionado && <Text style={styles.check}>✓</Text>}
-              </TouchableOpacity>
+                {selecionada && (
+                  <TextInput
+                    style={styles.inputSmall}
+                    placeholder="R$"
+                    placeholderTextColor="#777"
+                    keyboardType="numeric"
+                    value={selecionada.precoCliente}
+                    onChangeText={(value) =>
+                      atualizarPreco(item.id, value)
+                    }
+                  />
+                )}
+              </View>
             );
           })}
         </>
       )}
 
-      <Text style={styles.label}>Período de Cobrança *</Text>
+      {/* Período */}
+      <View style={styles.rowBetween}>
+        <Text style={styles.label}>Período *</Text>
 
-<View style={styles.row}>
-  <TouchableOpacity
-    style={[styles.radio, periodo === 'diario' && styles.radioActive]}
-    onPress={() => setPeriodo('diario')}
-  >
-    <Text style={styles.radioText}>Diário</Text>
-  </TouchableOpacity>
+        <TouchableOpacity onPress={() => router.push('/cadastro-periodo')}>
+          <Text style={styles.addText}>+ Novo</Text>
+        </TouchableOpacity>
+      </View>
 
-  <TouchableOpacity
-    style={[styles.radio, periodo === 'quinzenal' && styles.radioActive]}
-    onPress={() => setPeriodo('quinzenal')}
-  >
-    <Text style={styles.radioText}>Quinzenal</Text>
-  </TouchableOpacity>
+      <View style={styles.row}>
+        {periodos.map((item) => (
+          <TouchableOpacity
+            key={item.id}
+            style={[
+              styles.radio,
+              periodo === item.id && styles.radioActive,
+            ]}
+            onPress={() => setPeriodo(item.id)}
+          >
+            <Text style={styles.radioText}>{item.nome}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
 
-  <TouchableOpacity
-    style={[styles.radio, periodo === 'mensal' && styles.radioActive]}
-    onPress={() => setPeriodo('mensal')}
-  >
-    <Text style={styles.radioText}>Mensal</Text>
-  </TouchableOpacity>
-
-    <TouchableOpacity onPress={() => router.push('/cadastro-periodo')}>
-    <Text style={styles.radioText}>+ Novo</Text>
-  </TouchableOpacity>
-</View>
-
-      {/* Botão */}
       <TouchableOpacity style={styles.button} onPress={salvar}>
         <Text style={styles.buttonText}>Salvar Cliente</Text>
       </TouchableOpacity>
-    </View>
+    </ScrollView>
   );
 }
 
@@ -211,17 +222,28 @@ const styles = StyleSheet.create({
     padding: 14,
     borderRadius: 10,
   },
+  inputSmall: {
+    backgroundColor: '#1C1C1E',
+    color: '#fff',
+    padding: 10,
+    borderRadius: 8,
+    width: 80,
+  },
   row: {
     flexDirection: 'row',
     gap: 10,
     marginTop: 10,
+    flexWrap: 'wrap',
+  },
+  rowBetween: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   radio: {
-    flex: 1,
     padding: 14,
     backgroundColor: '#1C1C1E',
     borderRadius: 10,
-    alignItems: 'center',
   },
   radioActive: {
     backgroundColor: '#2563EB',
@@ -240,15 +262,14 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontWeight: '600',
   },
-
-  // NOVOS ESTILOS
   card: {
     backgroundColor: '#1C1C1E',
-    padding: 16,
+    padding: 12,
     borderRadius: 10,
     marginTop: 10,
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'center',
   },
   cardSelected: {
     borderWidth: 1,
@@ -257,8 +278,8 @@ const styles = StyleSheet.create({
   text: {
     color: '#fff',
   },
-  check: {
+  addText: {
     color: '#2563EB',
-    fontWeight: 'bold',
+    fontWeight: '600',
   },
 });

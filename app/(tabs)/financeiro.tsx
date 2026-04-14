@@ -10,6 +10,16 @@ export default function Financeiro() {
     <View style={styles.container}>
       <Text style={styles.title}>Financeiro</Text>
 
+      {/* 🔥 BOTÃO PRINCIPAL */}
+      <TouchableOpacity
+        style={styles.faturamento}
+        onPress={() => router.push('/faturamento-clientes')}
+      >
+        <Text style={styles.faturamentoText}>📄 Faturamento</Text>
+      </TouchableOpacity>
+
+      <Text style={styles.subtitle}>Períodos</Text>
+
       <FlatList
         data={periodos}
         keyExtractor={(item) => item.id}
@@ -41,6 +51,23 @@ const styles = StyleSheet.create({
     fontSize: 22,
     marginBottom: 20,
   },
+  subtitle: {
+    color: '#aaa',
+    marginTop: 20,
+    marginBottom: 10,
+  },
+  faturamento: {
+    backgroundColor: '#2563EB',
+    padding: 18,
+    borderRadius: 12,
+    marginBottom: 20,
+  },
+  faturamentoText: {
+    color: '#fff',
+    textAlign: 'center',
+    fontWeight: '600',
+    fontSize: 16,
+  },
   card: {
     backgroundColor: '#1C1C1E',
     padding: 16,
@@ -51,7 +78,7 @@ const styles = StyleSheet.create({
     color: '#fff',
   },
   button: {
-    backgroundColor: '#2563EB',
+    backgroundColor: '#1C1C1E',
     padding: 16,
     borderRadius: 10,
     marginTop: 20,
@@ -59,6 +86,5 @@ const styles = StyleSheet.create({
   buttonText: {
     color: '#fff',
     textAlign: 'center',
-    fontWeight: '600',
   },
 });
