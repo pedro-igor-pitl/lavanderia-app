@@ -17,25 +17,6 @@ export default function Financeiro() {
       >
         <Text style={styles.faturamentoText}>📄 Faturamento</Text>
       </TouchableOpacity>
-
-      <Text style={styles.subtitle}>Períodos</Text>
-
-      <FlatList
-        data={periodos}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <View style={styles.card}>
-            <Text style={styles.text}>{item.nome}</Text>
-          </View>
-        )}
-      />
-
-      <TouchableOpacity
-        style={styles.button}
-        onPress={() => router.push('/cadastro-periodo')}
-      >
-        <Text style={styles.buttonText}>+ Novo Período</Text>
-      </TouchableOpacity>
     </View>
   );
 }

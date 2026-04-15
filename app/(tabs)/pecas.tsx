@@ -8,22 +8,45 @@ import {
 } from 'react-native';
 import { useState } from 'react';
 import { useApp } from '../../components/AppContext';
+import api from '../services/api';
+import { useEffect } from 'react';
 
 export default function Pecas() {
-  const { pecas, adicionarPeca } = useApp();
+  const [pecas, setPecas] = useState<any[]>([]);
   const [nome, setNome] = useState('');
 
-  const adicionar = () => {
+  const adicionar = async () => {
     if (!nome.trim()) return;
 
-    adicionarPeca({
-      id: Date.now().toString(),
-      nome: nome.trim(),
-      preco: '', // padrão vazio (preço é por cliente)
-    });
+    try {
+      await api.post('/pecas/cadastrar', {
+        nome: nome.trim(),
+        ativo: true,
+      });
 
-    setNome('');
+      setNome('');
+
+      // recarrega lista
+      const response = await api.get('/pecas/listar');
+      setPecas(response.data);
+
+    } catch (error) {
+      console.error('Erro ao adicionar peça:', error);
+    }
   };
+
+  useEffect(() => {
+    async function carregarPecas() {
+      try {
+        const response = await api.get('/pecas/listar');
+        setPecas(response.data);
+      } catch (error) {
+        console.error('Erro ao buscar peças:', error);
+      }
+    }
+
+    carregarPecas();
+  }, []);
 
   return (
     <View style={styles.container}>
