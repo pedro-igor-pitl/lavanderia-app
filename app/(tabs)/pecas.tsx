@@ -21,6 +21,11 @@ export default function Pecas() {
   const [pecaSelecionada, setPecaSelecionada] = useState<any>(null);
   const [nomeEdit, setNomeEdit] = useState('');
 
+  const [confirmModalVisible, setConfirmModalVisible] = useState(false);
+  const [pecaStatusSelecionada, setPecaStatusSelecionada] = useState<any>(null);
+
+  const [busca, setBusca] = useState('');
+
   // 🔥 EDITAR (SEM REQUISIÇÃO DESNECESSÁRIA)
   const editarPecas = (item: any) => {
     setPecaSelecionada(item);
@@ -97,6 +102,10 @@ export default function Pecas() {
     carregarPecas();
   }, []);
 
+  const pecasFiltradas = pecas.filter(p =>
+    p.nome.toLowerCase().includes(busca.toLowerCase())
+  );
+
   return (
     <>
       <View style={styles.container}>
@@ -114,8 +123,20 @@ export default function Pecas() {
           <Text style={styles.buttonText}>Adicionar</Text>
         </TouchableOpacity>
 
+        <View style={styles.searchContainer}>
+          <MaterialIcons name="search" size={20} color="#777" />
+
+          <TextInput
+            placeholder="Buscar peça..."
+            placeholderTextColor="#777"
+            value={busca}
+            onChangeText={setBusca}
+            style={styles.searchInput}
+          />
+        </View>
+
         <FlatList
-          data={pecas}
+          data={pecasFiltradas}
           keyExtractor={(item) => item.id}
           ListEmptyComponent={
             <Text style={styles.empty}>Nenhuma peça cadastrada</Text>
@@ -187,6 +208,22 @@ export default function Pecas() {
 }
 
 const styles = StyleSheet.create({
+
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#1C1C1E',
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    marginBottom: 10,
+  },
+
+  searchInput: {
+    flex: 1,
+    color: '#fff',
+    padding: 10,
+  },
+  
   container: {
     flex: 1,
     backgroundColor: '#0F0F0F',
