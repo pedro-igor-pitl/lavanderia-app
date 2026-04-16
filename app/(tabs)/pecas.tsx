@@ -5,12 +5,11 @@ import {
   TouchableOpacity,
   FlatList,
   StyleSheet,
+  Modal,
+  Animated,
 } from 'react-native';
-import { useState } from 'react';
-import { useApp } from '../../components/AppContext';
+import { useState, useEffect } from 'react';
 import api from '../services/api';
-import { useEffect } from 'react';
-import { Animated } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 
 export default function Pecas() {
@@ -18,19 +17,50 @@ export default function Pecas() {
   const [nome, setNome] = useState('');
   const scaleAnim = useState(new Animated.Value(1))[0];
 
+  const [modalVisible, setModalVisible] = useState(false);
+  const [pecaSelecionada, setPecaSelecionada] = useState<any>(null);
+  const [nomeEdit, setNomeEdit] = useState('');
+
+  // 🔥 EDITAR (SEM REQUISIÇÃO DESNECESSÁRIA)
+  const editarPecas = (item: any) => {
+    setPecaSelecionada(item);
+    setNomeEdit(item.nome);
+    setModalVisible(true);
+  };
+
+  const salvarEdicao = async () => {
+    if (!nomeEdit.trim()) return;
+
+    try {
+      await api.put(`/pecas/atualizar/${pecaSelecionada.id}`, {
+        nome: nomeEdit,
+      });
+
+      setPecas(prev =>
+        prev.map(p =>
+          p.id === pecaSelecionada.id ? { ...p, nome: nomeEdit } : p
+        )
+      );
+
+      setModalVisible(false);
+      setPecaSelecionada(null);
+      setNomeEdit('');
+    } catch (error) {
+      console.error('Erro ao editar peça:', error);
+    }
+  };
+
   const atualizarStatus = async (id: string, ativo: boolean) => {
     try {
       await api.patch(`/pecas/atualizarStatus/${id}`, {
-        ativo: !ativo
+        ativo: !ativo,
       });
 
-      // atualização local
       setPecas(prev =>
         prev.map(p =>
           p.id === id ? { ...p, ativo: !p.ativo } : p
         )
       );
-
     } catch (error) {
       console.error('Erro ao atualizar status:', error);
     }
@@ -47,10 +77,8 @@ export default function Pecas() {
 
       setNome('');
 
-      // recarrega lista
       const response = await api.get('/pecas/listar');
       setPecas(response.data);
-
     } catch (error) {
       console.error('Erro ao adicionar peça:', error);
     }
@@ -70,50 +98,93 @@ export default function Pecas() {
   }, []);
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Cadastro de Peças</Text>
+    <>
+      <View style={styles.container}>
+        <Text style={styles.title}>Cadastro de Peças</Text>
 
-      <TextInput
-        placeholder="Nome da peça"
-        placeholderTextColor="#777"
-        value={nome}
-        onChangeText={setNome}
-        style={styles.input}
-      />
+        <TextInput
+          placeholder="Nome da peça"
+          placeholderTextColor="#777"
+          value={nome}
+          onChangeText={setNome}
+          style={styles.input}
+        />
 
-      <TouchableOpacity style={styles.button} onPress={adicionar}>
-        <Text style={styles.buttonText}>Adicionar</Text>
-      </TouchableOpacity>
+        <TouchableOpacity style={styles.button} onPress={adicionar}>
+          <Text style={styles.buttonText}>Adicionar</Text>
+        </TouchableOpacity>
 
-      <FlatList
-        data={pecas}
-        keyExtractor={(item) => item.id}
-        ListEmptyComponent={
-          <Text style={styles.empty}>Nenhuma peça cadastrada</Text>
-        }
-        renderItem={({ item }) => (
-          <View style={styles.card}>
-            <Text style={styles.text}>{item.nome}</Text>
+        <FlatList
+          data={pecas}
+          keyExtractor={(item) => item.id}
+          ListEmptyComponent={
+            <Text style={styles.empty}>Nenhuma peça cadastrada</Text>
+          }
+          renderItem={({ item }) => (
+            <View style={styles.card}>
+              <Text style={styles.text}>{item.nome}</Text>
+
+              <View style={{ flexDirection: 'row', gap: 8 }}>
+                {/* EDITAR */}
+                <TouchableOpacity
+                  onPress={() => editarPecas(item)}
+                  style={styles.statusButton}
+                >
+                  <MaterialIcons name="edit" size={22} color="#fff" />
+                </TouchableOpacity>
+
+                {/* STATUS */}
+                <TouchableOpacity
+                  onPress={() => atualizarStatus(item.id, item.ativo)}
+                  style={styles.statusButton}
+                >
+                  <Animated.View
+                    style={{ transform: [{ scale: scaleAnim }] }}
+                  >
+                    <MaterialIcons
+                      name={item.ativo ? 'toggle-on' : 'toggle-off'}
+                      size={36}
+                      color={item.ativo ? '#22C55E' : '#EF4444'}
+                    />
+                  </Animated.View>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
+        />
+      </View>
+
+      {/* MODAL */}
+      <Modal visible={modalVisible} transparent animationType="fade">
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.title}>Editar Peça</Text>
+
+            <TextInput
+              autoFocus
+              value={nomeEdit}
+              onChangeText={setNomeEdit}
+              style={styles.input}
+              placeholder="Nome da peça"
+              placeholderTextColor="#777"
+            />
+
+            <TouchableOpacity style={styles.button} onPress={salvarEdicao}>
+              <Text style={styles.buttonText}>Salvar</Text>
+            </TouchableOpacity>
 
             <TouchableOpacity
-              onPress={() => atualizarStatus(item.id, item.ativo)}
-              style={styles.statusButton}
-              activeOpacity={0.6}
+              onPress={() => setModalVisible(false)}
+              style={[styles.button, { backgroundColor: '#EF4444' }]}
             >
-            <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
-              <MaterialIcons
-                name={item.ativo ? 'toggle-on' : 'toggle-off'}
-                size={36}
-                color={item.ativo ? '#22C55E' : '#EF4444'}
-              />
-            </Animated.View>
+              <Text style={styles.buttonText}>Cancelar</Text>
             </TouchableOpacity>
           </View>
-        )}
-      />
-    </View>
+        </View>
+      </Modal>
+    </>
   );
-}  
+}
 
 const styles = StyleSheet.create({
   container: {
@@ -138,18 +209,11 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 10,
     marginBottom: 10,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
   },
   statusButton: {
     padding: 8,
     borderRadius: 8,
     backgroundColor: '#2A2A2E',
-  },
-
-  statusText: {
-    fontSize: 18,
   },
   button: {
     backgroundColor: '#2563EB',
@@ -165,10 +229,23 @@ const styles = StyleSheet.create({
   text: {
     color: '#fff',
     fontSize: 16,
+    marginBottom: 10,
   },
   empty: {
     color: '#777',
     textAlign: 'center',
     marginTop: 20,
+  },
+  modalContainer: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    width: '90%',
+    backgroundColor: '#1C1C1E',
+    padding: 20,
+    borderRadius: 12,
   },
 });
