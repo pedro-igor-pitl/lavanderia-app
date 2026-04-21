@@ -28,12 +28,16 @@ export default function CadastroCliente() {
   useEffect(() => {
     async function carregarPecas() {
       try {
-        const response = await api.get('/pecas/listar');
+        const response = await api.get('/cliente/listarPecasAtivas', {
+          params: { ativo: true }
+        });
+
         setPecas(response.data);
       } catch (error) {
         console.error('Erro ao buscar peças:', error);
       }
     }
+
     carregarPecas();
   }, []);
 
