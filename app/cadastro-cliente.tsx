@@ -67,7 +67,7 @@ export default function CadastroCliente() {
     });
   };
 
-  const salvar = () => {
+  const salvar = async () => {
     if (
       !nome ||
       !telefone ||
@@ -81,7 +81,40 @@ export default function CadastroCliente() {
       return;
     }
 
-    Alert.alert('Sucesso', 'Cliente cadastrado!');
+    try {
+      let payload: any = {
+        nome,
+        email,
+        telefone,
+        tipoCliente: tipo.toUpperCase(),
+        ativo: true,
+      };
+
+      if (tipo === 'peca') {
+        payload.pecas = pecasSelecionadas.map(p => ({
+          pecaId: p.id,
+          precoCliente: Number(p.precoCliente) / 100,
+        }));
+
+        payload.valorKg = null;
+      }
+
+      if (tipo === 'peso') {
+        payload.valorKg = Number(valorKg) / 100;
+        payload.pecas = null;
+      }
+
+      console.log('Payload enviado:', payload);
+
+      await api.post('/cliente/cadastrar', payload);
+
+      Alert.alert('Sucesso', 'Cliente cadastrado!');
+      router.back();
+
+    } catch (error) {
+      console.error(error);
+      Alert.alert('Erro', 'Erro ao cadastrar cliente');
+    }
   };
 
   return (
