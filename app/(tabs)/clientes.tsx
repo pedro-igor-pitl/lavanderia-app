@@ -42,6 +42,10 @@ export default function Clientes() {
     }
   };
 
+  const ClientesFiltradas = clientesResumido.filter(c =>
+    c.nome.toLowerCase().includes(busca.toLowerCase())
+  );
+
   return (
     <View style={styles.container}>
 
@@ -70,7 +74,7 @@ export default function Clientes() {
      
 
       <FlatList
-        data={clientesResumido}
+        data={ClientesFiltradas}
         keyExtractor={(item) => item.id}
         ListEmptyComponent={
           <Text style={styles.empty}>Nenhum cliente cadastrado</Text>
