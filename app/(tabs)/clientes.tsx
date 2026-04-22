@@ -5,12 +5,15 @@ import { TextInput } from 'react-native';
 import { useEffect, useState } from 'react';
 import api from '../services/api';
 import { Animated } from 'react-native';
+import { Modal } from 'react-native';
 
 export default function Clientes() {
   const router = useRouter();
   const [busca, setBusca] = useState('');
   const [clientesResumido, setClientesResumido] = useState<any[]>([]);
   const scaleAnim = useState(new Animated.Value(1))[0];
+  const [modalVisible, setModalVisible] = useState(false);
+  const [clienteSelecionado, setClienteSelecionado] = useState<any>(null);
 
   useEffect(() => {
     async function carregarClientesResumido() {
@@ -25,6 +28,21 @@ export default function Clientes() {
 
     carregarClientesResumido();
   }, []);
+
+  const abrirModalCliente = async (id: string) => {
+    try {
+      const response = await api.get(
+        `/cliente/buscarClienteCompleto/${id}`
+      );
+
+      setClienteSelecionado(response.data);
+      setModalVisible(true);
+
+    } catch (error) {
+      console.error('Erro ao buscar cliente:', error);
+      Alert.alert('Erro', 'Não foi possível carregar o cliente');
+    }
+  };
 
   const atualizarStatusCliente = async (id: string, ativo: boolean) => {
     try {
@@ -45,6 +63,26 @@ export default function Clientes() {
   const ClientesFiltradas = clientesResumido.filter(c =>
     c.nome.toLowerCase().includes(busca.toLowerCase())
   );
+
+  const formatarTelefone = (telefone: string) => {
+    const t = telefone.replace(/\D/g, '');
+
+    if (t.length === 11) {
+      return t.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
+    }
+
+    if (t.length === 10) {
+      return t.replace(/(\d{2})(\d{4})(\d{4})/, '($1) $2-$3');
+    }
+
+    return telefone;
+  };
+
+  const formatarTipo = (tipo: string) => {
+    if (tipo === 'PECA') return 'Peça';
+    if (tipo === 'PESO') return 'Peso';
+    return tipo;
+  };
 
   return (
     <View style={styles.container}>
@@ -88,7 +126,7 @@ export default function Clientes() {
 
               {/* EDITAR */}
               <TouchableOpacity
-                onPress={() => editarCliente(item)}
+                onPress={() => router.push(`/editar-cliente/${item.id}`)}
                 style={styles.statusButton}
               >
                 <MaterialIcons name="edit" size={22} color="#fff" />
@@ -110,7 +148,7 @@ export default function Clientes() {
 
               {/* 👁 VISUALIZAR */}
               <TouchableOpacity
-                onPress={() => router.push(`/cliente/${item.id}`)}
+                onPress={() => abrirModalCliente(item.id)}
                 style={styles.statusButton}
               >
                 <MaterialIcons name="visibility" size={22} color="#fff" />
@@ -122,11 +160,110 @@ export default function Clientes() {
       />
 
 
+    <Modal
+      visible={modalVisible}
+      transparent
+      animationType="fade"
+    >
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalContent}>
+          
+          <Text style={styles.modalTitle}>Detalhes do Cliente</Text>
+
+          {clienteSelecionado && (
+            <>
+              <Text style={styles.modalText}>
+                Nome: {clienteSelecionado.nome}
+              </Text>
+
+              <Text style={styles.modalText}>
+                Email: {clienteSelecionado.email || 'Não informado'}
+              </Text>
+
+              <Text style={styles.modalText}>
+                Telefone: {formatarTelefone(clienteSelecionado.telefone)}
+              </Text>
+
+              <Text style={styles.modalText}>
+                Tipo: {formatarTipo(clienteSelecionado.tipoCliente)}
+              </Text>
+
+              {clienteSelecionado.tipoCliente === 'PESO' && (
+                <Text style={[styles.modalText, { color: '#22C55E', fontWeight: 'bold' }]}>
+                  Valor por Kg: R$ {clienteSelecionado.valorKg ?? 0}
+                </Text>
+              )}
+
+              {clienteSelecionado.tipoCliente === 'PECA' && (
+                <>
+                  <Text style={[styles.modalText, { marginTop: 10 }]}>
+                    Peças:
+                  </Text>
+
+                  {clienteSelecionado.pecas?.map((p: any) => (
+                    <View key={p.pecaId} style={styles.pecaBox}>
+                      <Text style={styles.modalText}>
+                        • {p.nome}
+                      </Text>
+
+                      <Text
+                        style={[
+                          styles.modalText,
+                          {
+                            color: '#22C55E',
+                            fontWeight: 'bold',
+                          },
+                        ]}
+                      >
+                        R$ {Number(p.precoCliente).toFixed(2)}
+                      </Text>
+                    </View>
+                  ))}
+                </>
+              )}
+            </>
+          )}
+
+          <TouchableOpacity
+            style={styles.button}
+            onPress={() => setModalVisible(false)}
+          >
+            <Text style={styles.buttonText}>Fechar</Text>
+          </TouchableOpacity>
+
+        </View>
+      </View>
+    </Modal>
+
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  modalContent: {
+    backgroundColor: '#1C1C1E',
+    padding: 20,
+    borderRadius: 12,
+    width: '80%',
+  },
+
+  modalTitle: {
+    color: '#fff',
+    fontSize: 18,
+    marginBottom: 10,
+  },
+
+  modalText: {
+    color: '#aaa',
+    marginBottom: 5,
+  },
   statusButton: {
     padding: 8,
     borderRadius: 8,
