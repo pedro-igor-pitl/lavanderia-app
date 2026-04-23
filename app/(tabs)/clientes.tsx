@@ -60,6 +60,18 @@ export default function Clientes() {
     }
   };
 
+  const validarClienteAtivo = (item: any) => {
+    if (!item.ativo) {
+      Alert.alert(
+        'Cliente inativo',
+        'Ative o cliente para visualizar ou editar.'
+      );
+      return false;
+    }
+
+    return true;
+  };
+
   const ClientesFiltradas = clientesResumido.filter(c =>
     c.nome.toLowerCase().includes(busca.toLowerCase())
   );
@@ -126,8 +138,15 @@ export default function Clientes() {
 
               {/* EDITAR */}
               <TouchableOpacity
-                onPress={() => router.push(`/editar-cliente/${item.id}`)}
-                style={styles.statusButton}
+                onPress={() => {
+                  if (!validarClienteAtivo(item)) return;
+                  router.push(`/editar-cliente/${item.id}`);
+                }}
+                style={[
+                  styles.statusButton,
+                  !item.ativo && { opacity: 0.4 }
+                ]}
+                disabled={!item.ativo}
               >
                 <MaterialIcons name="edit" size={22} color="#fff" />
               </TouchableOpacity>
@@ -148,8 +167,15 @@ export default function Clientes() {
 
               {/* 👁 VISUALIZAR */}
               <TouchableOpacity
-                onPress={() => abrirModalCliente(item.id)}
-                style={styles.statusButton}
+                onPress={() => {
+                  if (!validarClienteAtivo(item)) return;
+                  abrirModalCliente(item.id);
+                }}
+                style={[
+                  styles.statusButton,
+                  !item.ativo && { opacity: 0.4 }
+                ]}
+                disabled={!item.ativo}
               >
                 <MaterialIcons name="visibility" size={22} color="#fff" />
               </TouchableOpacity>

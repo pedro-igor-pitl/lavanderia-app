@@ -26,6 +26,28 @@ export default function EditarCliente() {
   const [pecasSelecionadas, setPecasSelecionadas] = useState<any[]>([]);
   const [valorKg, setValorKg] = useState('');
   const [pecas, setPecas] = useState<any[]>([]);
+  const clienteId = Array.isArray(id) ? id[0] : id;
+  
+
+
+  useEffect(() => {
+    async function carregarPecas() {
+        try {
+        const { data } = await api.get('/cliente/listarPecasAtivas');
+
+        setPecas(
+            data.map((p: any) => ({
+            id: String(p.id),
+            nome: p.nome,
+            }))
+        );
+        } catch (error) {
+        console.error('Erro ao carregar peças:', error);
+        }
+    }
+
+    carregarPecas();
+  }, []);
 
   useEffect(() => {
     if (!id) return;
@@ -43,14 +65,14 @@ export default function EditarCliente() {
         setTipo(data.tipoCliente.toLowerCase());
 
         if (data.tipoCliente === 'PESO') {
-          setValorKg(String(data.valorKg * 100));
+          setValorKg(String(data.valorKg ?? ''));
         }
 
         if (data.tipoCliente === 'PECA') {
           const pecasFormatadas = data.pecas.map((p: any) => ({
             id: p.pecaId,
             nome: p.nome,
-            precoCliente: String(p.precoCliente * 100),
+            precoCliente: String(p.precoCliente)
           }));
 
           setPecasSelecionadas(pecasFormatadas);
@@ -77,6 +99,15 @@ export default function EditarCliente() {
     }
   };
 
+    const carregarPecas = async () => {
+        try {
+            const { data } = await api.get('/cliente/listarPecasAtivas');
+            setPecas(data);
+        } catch (error) {
+            console.error('Erro ao carregar peças:', error);
+        }
+    };
+
   const atualizarPreco = (id: string, valor: string) => {
     setPecasSelecionadas(prev =>
       prev.map(p =>
@@ -85,68 +116,65 @@ export default function EditarCliente() {
     );
   };
 
-  const formatarMoeda = (valor: string) => {
-    const numero = Number(valor) / 100;
+    const abrirModalPecas = async () => {
+        await carregarPecas();
+        setModalVisible(true);
+    };
 
-    return numero.toLocaleString('pt-BR', {
-      style: 'currency',
-      currency: 'BRL',
-    });
-  };
+const salvar = async () => {
+  if (
+    !nome ||
+    !telefone ||
+    !tipo ||
+    (tipo === 'peso' && !valorKg) ||
+    (tipo === 'peca' &&
+      (pecasSelecionadas.length === 0 ||
+        pecasSelecionadas.some(p => !p.precoCliente)))
+  ) {
+    Alert.alert('Erro', 'Preencha todos os campos obrigatórios');
+    return;
+  }
 
-  const salvar = async () => {
-    if (
-      !nome ||
-      !telefone ||
-      !tipo ||
-      (tipo === 'peso' && !valorKg) ||
-      (tipo === 'peca' &&
-        (pecasSelecionadas.length === 0 ||
-          pecasSelecionadas.some(p => !p.precoCliente)))
-    ) {
-      Alert.alert('Erro', 'Preencha todos os campos obrigatórios');
-      return;
-    }
+  try {
+    const payload: any = {
+      nome,
+      email,
+      telefone,
+      tipoCliente: tipo.toUpperCase(),
+    };
 
-    try {
-      let payload: any = {
-        nome,
-        email,
-        telefone,
-        tipoCliente: tipo.toUpperCase()
-      };
-
-      if (tipo === 'peca') {
+    if (tipo === 'peca') {
         payload.pecas = pecasSelecionadas.map(p => ({
-          pecaId: p.id,
-          precoCliente: Number(p.precoCliente) / 100,
+        pecaId: p.id,
+        precoCliente: p.precoCliente,
         }));
 
-        payload.valorKg = null;
-      }
-
-      if (tipo === 'peso') {
-        payload.valorKg = Number(valorKg) / 100;
-        payload.pecas = null;
-      }
-
-      console.log('Payload enviado:', payload);
-
-      await api.put(`/cliente/atualizarCliente/${id}`, payload);
-
-      Alert.alert('Sucesso', 'Cliente atualizado!');
-      router.back();
-
-    } catch (error: any) {
-        console.error(error);
-
-        const mensagem =
-            error?.response?.data?.message ||
-            'Erro ao atualizar cliente';
-
-        Alert.alert('Erro', mensagem);
+        payload.valorKg = valorKg;
     }
-  };
+
+    if (tipo === 'peso') {
+      payload.valorKg = Number(valorKg);
+      payload.pecas = null;
+    }
+
+    console.log('Payload enviado:', JSON.stringify(payload, null, 2));
+
+    console.log('DEBUG PECAS:', pecasSelecionadas);
+
+    await api.put(`/cliente/atualizarCliente/${clienteId}`, payload);
+
+    Alert.alert('Sucesso', 'Cliente atualizado!');
+    router.back();
+
+  } catch (error: any) {
+    console.error(error);
+
+    const mensagem =
+      error?.response?.data?.message || 'Erro ao atualizar cliente';
+
+    Alert.alert('Erro', mensagem);
+  }
+};
 
   return (
     <View style={{ flex: 1 }}>
@@ -240,13 +268,10 @@ export default function EditarCliente() {
           <>
             <Text style={styles.label}>Valor por Kg *</Text>
             <TextInput
-              style={styles.input}
-              keyboardType="numeric"
-              value={formatarMoeda(valorKg || '0')}
-              onChangeText={(value) => {
-                const somenteNumeros = value.replace(/\D/g, '');
-                setValorKg(somenteNumeros);
-              }}
+            style={styles.input}
+            keyboardType="numeric"
+            value={valorKg}
+            onChangeText={setValorKg}
             />
           </>
         )}
@@ -258,7 +283,7 @@ export default function EditarCliente() {
 
             <TouchableOpacity
               style={styles.selectButton}
-              onPress={() => setModalVisible(true)}
+              onPress={abrirModalPecas}
             >
               <Text style={styles.selectText}>
                 {pecasSelecionadas.length > 0
@@ -277,15 +302,12 @@ export default function EditarCliente() {
                 <View style={styles.precoContainer}>
                   <Text style={styles.moeda}>R$</Text>
 
-                  <TextInput
-                    style={styles.inputPreco}
-                    keyboardType="numeric"
-                    value={formatarMoeda(item.precoCliente || '0').replace('R$', '')}
-                    onChangeText={(value) => {
-                      const somenteNumeros = value.replace(/\D/g, '');
-                      atualizarPreco(item.id, somenteNumeros);
-                    }}
-                  />
+                <TextInput
+                style={styles.input}
+                keyboardType="numeric"
+                value={item.precoCliente}
+                onChangeText={(value) => atualizarPreco(item.id, value)}
+                />
                 </View>
 
                 <TouchableOpacity
