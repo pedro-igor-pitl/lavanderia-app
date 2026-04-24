@@ -19,7 +19,7 @@ export default function Coleta() {
 
   const carregarCliente = async () => {
     try {
-      const { data } = await api.get('/cliente/listarClientesResumido');
+      const { data } = await api.get('/cliente/listarClientesResumido?ativo=true');
       setClientes(data);
     } catch (error) {
       console.error('Erro ao carregar clientes:', error);

@@ -8,6 +8,7 @@ import {
   StyleSheet,
   ScrollView,
 } from 'react-native';
+import DateTimePicker from '@react-native-community/datetimepicker';
 
 export default function CadastrarColeta() {
   const params = useLocalSearchParams();
@@ -37,7 +38,7 @@ export default function CadastrarColeta() {
         setCliente(data);
         setTipo(data.tipoCliente);
 
-        console.log('Dados de CLiente completo:', data.tipoCliente);
+        console.log('Dados de CLiente completo:', data.pecas[0].precoCliente);
 
       } catch (error) {
         console.error('Erro:', error);
@@ -52,6 +53,25 @@ export default function CadastrarColeta() {
       ...prev,
       [pecaId]: valor,
     }));
+  };
+
+  const calcularTotal = (peca: any) => {
+    const quantidade = Number(quantidades[peca.pecaId] || 0);
+    const preco = Number(peca.precoCliente || 0);
+
+    const total = quantidade * preco;
+
+    return total.toFixed(2);
+  };
+
+  const formatarData = (valor: string) => {
+    let v = valor.replace(/\D/g, '');
+
+    // aplica máscara
+    if (v.length > 2) v = v.slice(0, 2) + '/' + v.slice(2);
+    if (v.length > 5) v = v.slice(0, 5) + '/' + v.slice(5, 9);
+
+    return v;
   };
 
   return (
@@ -70,20 +90,34 @@ export default function CadastrarColeta() {
 
       {/* Dados do Roll */}
       <View style={styles.card}>
-        <Text style={styles.label}>Número do Roll</Text>
-        <TextInput
-          style={styles.input}
-          value={numeroRoll}
-          onChangeText={setNumeroRoll}
-        />
+        <View style={styles.rowBetween}>
 
-        <Text style={styles.label}>Data do Roll</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="YYYY-MM-DD"
-          value={dataRoll}
-          onChangeText={setDataRoll}
-        />
+          {/* Número do Roll */}
+          <View style={{ flex: 2, marginRight: 8 }}>
+            <Text style={styles.label}>Número do Roll</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Ex: 12345"
+              placeholderTextColor="#777"
+              value={numeroRoll}
+              onChangeText={setNumeroRoll}
+            />
+          </View>
+
+          {/* Data */}
+          <View style={{ flex: 1 }}>
+            <Text style={styles.label}>Data</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="YYYY-MM-DD"
+              placeholderTextColor="#777"
+              value={dataRoll}
+              onChangeText={(text) => setDataRoll(formatarData(text))}
+              maxLength={10}
+            />
+          </View>
+
+        </View>
       </View>
 
       {/* Peso */}
@@ -102,20 +136,33 @@ export default function CadastrarColeta() {
       {/* Peças */}
       {tipo === 'PECA' && (
         <View style={styles.card}>
-          <Text style={styles.labelClienteInformativo}>Defina a quantidade por peça para {cliente.nome}</Text>
           {cliente?.pecas?.map((peca: any) => (
-            <View key={peca.id} style={styles.pecaItem}>
+            <View key={peca.pecaId} style={styles.pecaItem}>
               <Text style={styles.pecaNome}>{peca.nome}</Text>
 
-              <TextInput
-                style={styles.input}
-                keyboardType="numeric"
-                placeholder="Quantidade"
-                value={quantidades[peca.id] || ''}
-                onChangeText={(valor) =>
-                  handleQuantidadeChange(peca.id, valor)
-                }
-              />
+              <View style={styles.rowBetween}>
+                <View style={{ flex: 1, marginRight: 8 }}>
+                  <Text style={styles.pecaNome}>Quantidade</Text>
+                  <TextInput
+                    style={styles.input}
+                    keyboardType="numeric"
+                    value={quantidades[peca.pecaId] || ''}
+                    onChangeText={(valor) =>
+                      handleQuantidadeChange(peca.pecaId, valor)
+                    }
+                  />
+                </View>
+
+                <View style={{ flex: 1, marginLeft: 8 }}>
+                  <Text style={styles.pecaNome}>Total</Text>
+                    <View style={[styles.input, styles.inputDisabledDark]}>
+                      <Text style={{ color: '#009b1a' }}>
+                        R$ {calcularTotal(peca)}
+                      </Text>
+                    </View>
+                </View>
+              </View>
+
             </View>
           ))}
         </View>
@@ -125,8 +172,22 @@ export default function CadastrarColeta() {
 }
 
 const styles = StyleSheet.create({
+  inputDisabledDark: {
+    backgroundColor: '#2a2a2a',
+    borderColor: '#2a2a2a',
+    color: '#888',
+    opacity: 0.7,
+  },
+  numeroDataRollEntre: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  rowBetween: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
   labelClienteInformativo: {
-    fontSize: 18,
+    fontSize: 15,
     color: '#bbbbbb',
     marginBottom: 20,
     fontWeight: '500',
@@ -181,7 +242,7 @@ const styles = StyleSheet.create({
   pecaNome: {
     fontSize: 15,
     color: '#7f8c8d',
-    marginBottom: 4,
+    marginBottom: 10,
     fontWeight: '500',
   },
 });
