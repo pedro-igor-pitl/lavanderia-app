@@ -7,6 +7,7 @@ import {
   TextInput,
   StyleSheet,
   ScrollView,
+  TouchableOpacity,
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
@@ -74,30 +75,47 @@ export default function CadastrarColeta() {
     return v;
   };
 
+  const calcularQuantidadeTotal = () => {
+    return Object.values(quantidades).reduce((total, qtd) => {
+      return total + Number(qtd || 0);
+    }, 0);
+  };
+
+  const calcularValorTotal = () => {
+    if (!cliente?.pecas) return 0;
+
+    return cliente.pecas.reduce((total: number, peca: any) => {
+      const quantidade = Number(quantidades[peca.pecaId] || 0);
+      const preco = Number(peca.precoCliente || 0);
+
+      return total + quantidade * preco;
+    }, 0);
+  };
+
   return (
     <ScrollView style={styles.container}>
       <Text style={styles.titulo}>Cadastro de Coleta</Text>
-
-      {/* Cliente */}
-      <View style={styles.card}>
-        <Text style={styles.label}>Cliente</Text>
-        <TextInput
-          style={[styles.input, styles.inputDisabled]}
-          value={cliente?.nome || ''}
-          editable={false}
-        />
-      </View>
 
       {/* Dados do Roll */}
       <View style={styles.card}>
         <View style={styles.rowBetween}>
 
+          {/* Cliente */}
+          <View style={{ flex: 1, marginRight: 8 }}>
+            <Text style={styles.label}>Cliente</Text>
+            <TextInput
+              style={[styles.input, styles.inputDisabled]}
+              value={cliente?.nome || ''}
+              editable={false}
+            />
+          </View>
+
           {/* Número do Roll */}
-          <View style={{ flex: 2, marginRight: 8 }}>
-            <Text style={styles.label}>Número do Roll</Text>
+          <View style={{ flex: 1, marginRight: 8 }}>
+            <Text style={styles.label}>Nº Roll</Text>
             <TextInput
               style={styles.input}
-              placeholder="Ex: 12345"
+              placeholder="12345"
               placeholderTextColor="#777"
               value={numeroRoll}
               onChangeText={setNumeroRoll}
@@ -105,11 +123,11 @@ export default function CadastrarColeta() {
           </View>
 
           {/* Data */}
-          <View style={{ flex: 1 }}>
+          <View style={{ flex: 1, marginRight: 8 }}>
             <Text style={styles.label}>Data</Text>
             <TextInput
               style={styles.input}
-              placeholder="YYYY-MM-DD"
+              placeholder="01/01/0001"
               placeholderTextColor="#777"
               value={dataRoll}
               onChangeText={(text) => setDataRoll(formatarData(text))}
@@ -165,13 +183,54 @@ export default function CadastrarColeta() {
 
             </View>
           ))}
+
+      <View style={styles.card}>
+        <View style={styles.rowBetween}>
+
+          <View style={{ flex: 1, marginRight: 8 }}>
+            <Text style={styles.pecaNome}>Quantidade Total de Peças</Text>
+            <View style={[styles.input, styles.inputDisabledDark]}>
+              <Text style={{ color: '#d6d6d6' }}>
+                {calcularQuantidadeTotal()}
+              </Text>
+            </View>
+          </View>
+
+          {/* Data */}
+          <View style={{ flex: 1, marginRight: 8 }}>
+            <Text style={styles.pecaNome}>Valor Total</Text>
+            <View style={[styles.input, styles.inputDisabledDark]}>
+              <Text style={{ color: '#009b1a' }}>
+                R$ {calcularValorTotal().toFixed(2)}
+              </Text>
+            </View>
+          </View>
         </View>
+      </View>
+
+        <TouchableOpacity style={styles.button}>
+          <Text style={styles.buttonText}>Salvar</Text>
+        </TouchableOpacity>
+      </View>
+
+        
       )}
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
+  button: {
+    backgroundColor: '#2563EB',
+    padding: 16,
+    borderRadius: 10,
+    marginTop: 30,
+  },
+  buttonText: {
+    color: '#fff',
+    textAlign: 'center',
+    fontWeight: '600',
+  },
   inputDisabledDark: {
     backgroundColor: '#2a2a2a',
     borderColor: '#2a2a2a',
@@ -222,8 +281,11 @@ const styles = StyleSheet.create({
   },
 
   inputDisabled: {
-    backgroundColor: '#ecf0f1',
-    color: '#7f8c8d',
+    backgroundColor: '#2a2a2a',
+    borderColor: '#2a2a2a',
+    color: '#888',
+    opacity: 0.7,
+    textAlign: 'center',
   },
 
   card: {
