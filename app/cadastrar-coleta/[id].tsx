@@ -160,6 +160,10 @@ export default function CadastrarColeta() {
     return `${ano}-${mes}-${dia}`;
   };
 
+  const apenasInteiros = (valor: string) => {
+    return valor.replace(/\D/g, '');
+  };
+
   return (
     <ScrollView style={styles.container}>
       <Text style={styles.titulo}>Cadastro de Coleta</Text>
@@ -259,10 +263,10 @@ export default function CadastrarColeta() {
                   <Text style={styles.pecaNome}>Quantidade</Text>
                   <TextInput
                     style={styles.input}
-                    keyboardType="numeric"
+                    keyboardType="number-pad"
                     value={quantidades[peca.pecaId] || ''}
                     onChangeText={(valor) =>
-                      handleQuantidadeChange(peca.pecaId, apenasNumerosDecimal(valor))
+                      handleQuantidadeChange(peca.pecaId, apenasInteiros(valor))
                     }
                   />
                 </View>
