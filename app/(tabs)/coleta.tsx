@@ -8,10 +8,9 @@ import {
   ScrollView,
 } from 'react-native';
 import { useState } from 'react';
-import { useApp } from '../../components/AppContext';
 import api from '../services/api';
 import { useRouter } from 'expo-router';
-import { Modal, Pressable } from 'react-native';
+import { Modal } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { useMemo } from 'react';
 
@@ -91,7 +90,7 @@ export default function Coleta() {
 
   return (
     <ScrollView style={styles.container}>
-      <Text style={styles.title}>Nova Coleta</Text>
+      <Text style={styles.title}>Coleta</Text>
 
       {/* ESCOLHA */}
       {modo === 'menu' && (
@@ -155,7 +154,7 @@ export default function Coleta() {
         <>
           <Text style={styles.label}>Selecionar Cliente</Text>
 
-                    <TextInput
+          <TextInput
             style={styles.input}
             placeholder="Buscar cliente..."
             placeholderTextColor="#777"
@@ -164,12 +163,6 @@ export default function Coleta() {
             autoCapitalize="none"
             autoCorrect={false}
           />
-
-          {clientes.length === 0 && (
-            <Text style={{ color: '#777' }}>
-              Nenhum cliente cadastrado
-            </Text>
-          )}
 
           {clientes.length === 0 && (
             <Text style={{ color: '#777' }}>
@@ -256,7 +249,13 @@ export default function Coleta() {
               <TouchableOpacity
                 style={[styles.button, { marginTop: 10 }]}
                 onPress={() => {
-                  router.push(`/visualizar-coleta-detalhe/${c.id}`);
+                    router.push({
+                      pathname: '/vizualizar-coleta',
+                      params: {
+                        clienteId: c.clienteId,
+                        codigoManual: c.codigoManual,
+                      },
+                    });
                 }}
               >
                 <Text style={styles.buttonText}>👁 Ver Detalhes</Text>
@@ -265,7 +264,6 @@ export default function Coleta() {
           ))}
         </View>
       )}
-
     </ScrollView>
 
   );
