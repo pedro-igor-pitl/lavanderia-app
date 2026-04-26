@@ -4,12 +4,14 @@ import api from '../services/api';
 import {
   View,
   Text,
+  Alert,
   TextInput,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import { useRouter } from 'expo-router';
 
 export default function CadastrarColeta() {
   const params = useLocalSearchParams();
@@ -19,13 +21,15 @@ export default function CadastrarColeta() {
     : params.id;
 
   const [cliente, setCliente] = useState<any>(null);
-  const [tipo, setTipo] = useState<'peso' | 'peca' | null>(null);
+  const [tipo, setTipo] = useState<'PESO' | 'PECA' | null>(null);
 
   const [numeroRoll, setNumeroRoll] = useState('');
   const [dataRoll, setDataRoll] = useState('');
 
   const [peso, setPeso] = useState('');
   const [quantidades, setQuantidades] = useState<{ [key: string]: string }>({});
+
+  const router = useRouter();
 
   useEffect(() => {
     if (!clienteId) return;
@@ -39,7 +43,7 @@ export default function CadastrarColeta() {
         setCliente(data);
         setTipo(data.tipoCliente);
 
-        console.log('Dados de CLiente completo:', data.pecas[0].precoCliente);
+        console.log('Dados de CLiente completo:', data);
 
       } catch (error) {
         console.error('Erro:', error);
@@ -92,6 +96,70 @@ export default function CadastrarColeta() {
     }, 0);
   };
 
+  const calcularTotalPeso = () => {
+    const pesoNum = Number(peso || 0);
+    const valorKg = Number(cliente?.valorKg || 0);
+
+    return (pesoNum * valorKg).toFixed(2);
+  };
+
+  const apenasNumerosDecimal = (valor: string) => {
+    return valor
+      .replace(/[^0-9.,]/g, '')   // remove letras
+      .replace(',', '.');         // troca vírgula por ponto
+  };
+
+
+  const SalvarNovaColeta = async () => {
+    const dataValida = /^\d{2}\/\d{2}\/\d{4}$/.test(dataRoll);
+
+    if (
+      !numeroRoll ||
+      !clienteId ||
+      !dataValida ||
+      (tipo === 'PESO' && (!peso || Number(peso) <= 0)) ||
+      (tipo === 'PECA' &&
+        (!cliente?.pecas ||
+          Object.values(quantidades).every(q => Number(q) <= 0)))
+    ) {
+      Alert.alert('Erro', 'Preencha todos os campos corretamente');
+      return;
+    }
+
+    try {
+      let payload: any = {
+        codigo_manual: numeroRoll,
+        cliente_id: clienteId,
+        data_coleta: formatarDataParaBackend(dataRoll),
+      };
+
+      if (tipo == 'PECA') {
+        payload.itens = cliente.pecas.map((peca: any) => ({
+          peca_id: peca.pecaId,
+          quantidade: Number(quantidades[peca.pecaId] || 0),
+          preco_unitario: Number(peca.precoCliente || 0),
+        }));
+      }
+
+      if (tipo == 'PESO') {
+        payload.peso = Number(cliente?.valorKg || 0);
+      }
+
+       console.log(JSON.stringify(payload, null, 2));
+
+       await api.post('/coleta/cadastrarRoll', payload);
+
+       alert('Coleta salva com sucesso!');
+    } catch (error) {
+      console.error('Erro ao salvar coleta');
+    }
+  };
+
+  const formatarDataParaBackend = (data: string) => {
+    const [dia, mes, ano] = data.split('/');
+    return `${ano}-${mes}-${dia}`;
+  };
+
   return (
     <ScrollView style={styles.container}>
       <Text style={styles.titulo}>Cadastro de Coleta</Text>
@@ -141,13 +209,41 @@ export default function CadastrarColeta() {
       {/* Peso */}
       {tipo === 'PESO' && (
         <View style={styles.card}>
-          <Text style={styles.label}>Peso (kg)</Text>
-          <TextInput
-            style={styles.input}
-            value={peso}
-            onChangeText={setPeso}
-            keyboardType="numeric"
-          />
+          <View style={styles.rowBetween}>
+
+            {/* Peso */}
+            <View style={{ flex: 1, marginRight: 8 }}>
+              <Text style={styles.label}>Peso (kg)</Text>
+              <TextInput
+                style={styles.input}
+                value={peso}
+                onChangeText={(text) => setPeso(apenasNumerosDecimal(text))}
+                keyboardType="numeric"
+              />
+            </View>
+
+            {/* Total */}
+            <View style={{ flex: 1, marginLeft: 8 }}>
+              <Text style={styles.label}>Total</Text>
+              <View style={[styles.input, styles.inputDisabledDark]}>
+                <Text style={{ color: '#009b1a' }}>
+                  R$ {calcularTotalPeso()}
+                </Text>
+              </View>
+            </View>
+
+          </View>
+
+          <TouchableOpacity 
+            style={styles.button}
+            onPress={() => {
+              SalvarNovaColeta();
+              router.push('/coleta');
+            }}
+          >   
+            <Text style={styles.buttonText}>Salvar</Text>
+          </TouchableOpacity>
+
         </View>
       )}
 
@@ -166,7 +262,7 @@ export default function CadastrarColeta() {
                     keyboardType="numeric"
                     value={quantidades[peca.pecaId] || ''}
                     onChangeText={(valor) =>
-                      handleQuantidadeChange(peca.pecaId, valor)
+                      handleQuantidadeChange(peca.pecaId, apenasNumerosDecimal(valor))
                     }
                   />
                 </View>
@@ -208,9 +304,15 @@ export default function CadastrarColeta() {
         </View>
       </View>
 
-        <TouchableOpacity style={styles.button}>
+        <TouchableOpacity 
+            style={styles.button}             
+            onPress={() => {
+              SalvarNovaColeta();
+              router.push('/coleta');
+            }}>
           <Text style={styles.buttonText}>Salvar</Text>
         </TouchableOpacity>
+
       </View>
 
         
