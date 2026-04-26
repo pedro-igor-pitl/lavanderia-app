@@ -11,11 +11,30 @@ import { useState } from 'react';
 import { useApp } from '../../components/AppContext';
 import api from '../services/api';
 import { useRouter } from 'expo-router';
+import { Modal, Pressable } from 'react-native';
+import { BlurView } from 'expo-blur';
+import { useMemo } from 'react';
 
 export default function Coleta() {
-  const [modoManual, setModoManual] = useState(false);
+  const [modo, setModo] = useState<'menu' | 'manual' | 'visualizar'>('menu');
   const router = useRouter();
   const [clientes, setClientes] = useState<any[]>([]);
+
+  const [modalVisivel, setModalVisivel] = useState(false);
+  const [clienteSelecionado, setClienteSelecionado] = useState<string | null>(null);
+
+  const [dataInicio, setDataInicio] = useState('');
+  const [dataFim, setDataFim] = useState('');
+
+  const [coletas, setColetas] = useState<any[]>([]);
+
+  const [search, setSearch] = useState('');
+
+  const clientesFiltrados = useMemo(() => {
+    return clientes.filter((c) =>
+      (c.nome ?? '').toLowerCase().includes(search.toLowerCase())
+    );
+  }, [clientes, search]);
 
   const carregarCliente = async () => {
     try {
@@ -27,29 +46,92 @@ export default function Coleta() {
     }
   };
 
+  const formatarDataParaBackend = (data: string) => {
+    const regex = /^\d{2}\/\d{2}\/\d{4}$/;
+
+    if (!regex.test(data)) {
+      throw new Error('Data inválida');
+    }
+
+    const [dia, mes, ano] = data.split('/');
+    return `${ano}-${mes}-${dia}`;
+  };
+
+  const buscarColetas = async () => {
+    try {
+      if (!dataInicio || !dataFim) {
+        Alert.alert('Erro', 'Preencha as datas');
+        return;
+      }
+
+      const inicio = formatarDataParaBackend(dataInicio);
+      const fim = formatarDataParaBackend(dataFim);
+
+      const response = await api.get('/coleta/vizualizarColetas', {
+        params: {
+          clienteId: clienteSelecionado,
+          inicio,
+          fim,
+        },
+      });
+
+      if (response.data.length === 0) {
+        Alert.alert('Aviso', 'Nenhuma coleta encontrada');
+        return;
+      }
+
+      setColetas(response.data);
+      setModalVisivel(false);
+
+    } catch (error) {
+      Alert.alert('Erro', 'Data inválida ou erro na busca');
+      console.error(error);
+    }
+  };
+
   return (
     <ScrollView style={styles.container}>
       <Text style={styles.title}>Nova Coleta</Text>
 
       {/* ESCOLHA */}
-      {!modoManual && (
+      {modo === 'menu' && (
         <>
           <TouchableOpacity
             style={styles.card}
             onPress={async () => {
-              setModoManual(true);
+              setModo('manual');
               await carregarCliente();
             }}
           >
             <Text style={styles.text}>✍️ Cadastro Manual</Text>
           </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.card}
+            onPress={async () => {
+              setModo('visualizar');
+              await carregarCliente();
+            }}
+          >
+            <Text style={styles.text}>📄 Vizualizar uma Coleta</Text>
+          </TouchableOpacity>
         </>
       )}
 
       {/* MANUAL */}
-      {modoManual && (
+      {modo === 'manual' && (
         <>
           <Text style={styles.label}>Selecionar Cliente</Text>
+
+          <TextInput
+            style={styles.input}
+            placeholder="Buscar cliente..."
+            placeholderTextColor="#777"
+            value={search}
+            onChangeText={setSearch}
+            autoCapitalize="none"
+            autoCorrect={false}
+          />
 
           {clientes.length === 0 && (
             <Text style={{ color: '#777' }}>
@@ -57,14 +139,53 @@ export default function Coleta() {
             </Text>
           )}
 
-          {clientes.map((c: any) => (
+          {clientesFiltrados.map((c: any) => (
+            <TouchableOpacity
+              key={c.id}
+              style={styles.card}
+              onPress={() => router.push(`/cadastrar-coleta/${c.id}`)}
+            >
+              <Text style={styles.text}>{c.nome}</Text>
+            </TouchableOpacity>
+          ))}
+        </>
+      )}
+
+      {modo === 'visualizar' && (
+        <>
+          <Text style={styles.label}>Selecionar Cliente</Text>
+
+                    <TextInput
+            style={styles.input}
+            placeholder="Buscar cliente..."
+            placeholderTextColor="#777"
+            value={search}
+            onChangeText={setSearch}
+            autoCapitalize="none"
+            autoCorrect={false}
+          />
+
+          {clientes.length === 0 && (
+            <Text style={{ color: '#777' }}>
+              Nenhum cliente cadastrado
+            </Text>
+          )}
+
+          {clientes.length === 0 && (
+            <Text style={{ color: '#777' }}>
+              Nenhum cliente cadastrado
+            </Text>
+          )}
+
+          {clientesFiltrados.map((c: any) => (
             <TouchableOpacity
               key={c.id}
               style={[
                 styles.card,
               ]}
               onPress={() => {
-                router.push(`/cadastrar-coleta/${c.id}`);
+                setClienteSelecionado(c.id);
+                setModalVisivel(true);
               }}
             >
               <Text style={styles.text}>{c.nome}</Text>
@@ -72,11 +193,105 @@ export default function Coleta() {
           ))}
         </>
       )}
+
+      <Modal
+        visible={modalVisivel}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setModalVisivel(false)}
+      >
+        <BlurView intensity={80} style={styles.blurContainer}>
+          
+          <View style={styles.modalBox}>
+
+            {/* botão fechar */}
+            <TouchableOpacity
+              onPress={() => {
+                setModalVisivel(false);
+                setDataInicio('');
+                setDataFim('');
+              }}
+              style={styles.closeButton}
+            >
+              <Text style={{ color: '#fff', fontSize: 18 }}>✕</Text>
+            </TouchableOpacity>
+
+            <Text style={styles.label}>Data Início</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="01/01/2026"
+              placeholderTextColor="#777"
+              value={dataInicio}
+              onChangeText={setDataInicio}
+            />
+
+            <Text style={styles.label}>Data Fim</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="01/01/2026"
+              placeholderTextColor="#777"
+              value={dataFim}
+              onChangeText={setDataFim}
+            />
+
+            <TouchableOpacity style={styles.button} onPress={buscarColetas}>
+              <Text style={styles.buttonText}>Buscar</Text>
+            </TouchableOpacity>
+
+          </View>
+
+        </BlurView>
+      </Modal>
+
+      {coletas.length > 0 && (
+        <View style={{ marginTop: 20 }}>
+          <Text style={styles.label}>Coletas Encontradas</Text>
+
+          {coletas.map((c: any) => (
+            <View key={c.id} style={styles.card}>
+              <Text style={styles.text}>Cliente: {c.clienteNome}</Text>
+              <Text style={styles.text}>Roll: {c.codigoManual}</Text>
+              <Text style={styles.text}>Data: {c.dataColeta}</Text>
+
+              <TouchableOpacity
+                style={[styles.button, { marginTop: 10 }]}
+                onPress={() => {
+                  router.push(`/visualizar-coleta-detalhe/${c.id}`);
+                }}
+              >
+                <Text style={styles.buttonText}>👁 Ver Detalhes</Text>
+              </TouchableOpacity>
+            </View>
+          ))}
+        </View>
+      )}
+
     </ScrollView>
+
   );
 }
 
 const styles = StyleSheet.create({
+  blurContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.4)',
+  },
+
+  modalBox: {
+    width: '90%',
+    backgroundColor: '#1C1C1E',
+    padding: 20,
+    borderRadius: 14,
+  },
+
+  closeButton: {
+    position: 'absolute',
+    right: 10,
+    top: 10,
+    zIndex: 10,
+  },
   container: {
     flex: 1,
     backgroundColor: '#0F0F0F',
