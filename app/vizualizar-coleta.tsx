@@ -150,6 +150,17 @@ export default function VizualizarColeta() {
               </View>
             </View>
 
+            
+            {/* Peso */}
+            <View style={{ flex: 1, marginRight: 8 }}>
+              <Text style={styles.label}>Preço Unitario</Text>
+              <View style={[styles.input, styles.inputDisabledDark]}>
+                <Text style={{ color: '#fff' }}>
+                  {coleta?.valorKg?.toString() || ''}
+                </Text>
+              </View>
+            </View>
+
             {/* Total */}
             <View style={{ flex: 1, marginLeft: 8 }}>
               <Text style={styles.label}>Total</Text>

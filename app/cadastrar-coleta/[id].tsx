@@ -142,7 +142,7 @@ export default function CadastrarColeta() {
       }
 
       if (tipo == 'PESO') {
-        payload.peso = Number(cliente?.valorKg || 0);
+        payload.peso = Number(peso || 0);
       }
 
        console.log(JSON.stringify(payload, null, 2));
