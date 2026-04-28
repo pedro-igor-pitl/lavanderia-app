@@ -16,6 +16,8 @@ import { useMemo } from 'react';
 
 export default function Coleta() {
   const [modo, setModo] = useState<'menu' | 'manual' | 'visualizar'>('menu');
+  const [acao, setAcao] = useState<'visualizar' | 'editar'>('visualizar');
+
   const router = useRouter();
   const [clientes, setClientes] = useState<any[]>([]);
 
@@ -88,6 +90,13 @@ export default function Coleta() {
     }
   };
 
+  const resetarBusca = () => {
+    setColetas([]);
+    setClienteSelecionado(null);
+    setDataInicio('');
+    setDataFim('');
+  };
+
   return (
     <ScrollView style={styles.container}>
       <Text style={styles.title}>Coleta</Text>
@@ -108,12 +117,27 @@ export default function Coleta() {
           <TouchableOpacity
             style={styles.card}
             onPress={async () => {
+              resetarBusca();
               setModo('visualizar');
+              setAcao('visualizar');
               await carregarCliente();
             }}
           >
-            <Text style={styles.text}>📄 Vizualizar uma Coleta</Text>
+            <Text style={styles.text}>📄 Visualizar uma Coleta</Text>
           </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.card}
+            onPress={async () => {
+              resetarBusca();
+              setModo('visualizar');
+              setAcao('editar');
+              await carregarCliente();
+            }}
+          >
+            <Text style={styles.text}>📝 Editar uma Coleta</Text>
+          </TouchableOpacity>
+
         </>
       )}
 
@@ -249,6 +273,7 @@ export default function Coleta() {
               <TouchableOpacity
                 style={[styles.button, { marginTop: 10 }]}
                 onPress={() => {
+                  if (acao === 'visualizar') {
                     router.push({
                       pathname: '/vizualizar-coleta',
                       params: {
@@ -256,9 +281,20 @@ export default function Coleta() {
                         codigoManual: c.codigoManual,
                       },
                     });
+                  } else {
+                    router.push({
+                      pathname: '/editar-coleta',
+                      params: {
+                        clienteId: c.clienteId,
+                        codigoManual: c.codigoManual,
+                      },
+                    });
+                  }
                 }}
               >
-                <Text style={styles.buttonText}>👁 Ver Detalhes</Text>
+                <Text style={styles.buttonText}>
+                  {acao === 'visualizar' ? '👁 Ver Detalhes' : '✏️ Editar'}
+                </Text>
               </TouchableOpacity>
             </View>
           ))}
