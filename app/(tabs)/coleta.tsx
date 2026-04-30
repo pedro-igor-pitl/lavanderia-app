@@ -15,12 +15,8 @@ import { BlurView } from 'expo-blur';
 import { useMemo } from 'react';
 
 export default function Coleta() {
-<<<<<<< HEAD
   const [modo, setModo] = useState<'menu' | 'manual' | 'visualizar'>('menu');
   const [acao, setAcao] = useState<'visualizar' | 'editar'>('visualizar');
-=======
-  const [modo, setModo] = useState<'menu' | 'manual' | 'visualizar' | 'editar'>('menu');
->>>>>>> 465846b (Feat: Tela inicial de edição de um roll)
 
   const router = useRouter();
   const [clientes, setClientes] = useState<any[]>([]);
@@ -128,19 +124,6 @@ export default function Coleta() {
             }}
           >
             <Text style={styles.text}>📄 Visualizar uma Coleta</Text>
-<<<<<<< HEAD
-=======
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.card}
-            onPress={async () => {
-              setModo('editar');
-              await carregarCliente();
-            }}
-          >
-            <Text style={styles.text}>📝 Editar uma Coleta</Text>
->>>>>>> 465846b (Feat: Tela inicial de edição de um roll)
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -317,19 +300,7 @@ export default function Coleta() {
               <TouchableOpacity
                 style={[styles.button, { marginTop: 10 }]}
                 onPress={() => {
-<<<<<<< HEAD
                   if (acao === 'visualizar') {
-=======
-                  if (modo === 'editar') {
-                    router.push({
-                      pathname: '/editar-coleta/[id]',
-                      params: {
-                        clienteId: c.clienteId,
-                        codigoManual: c.codigoManual,
-                      },
-                    });
-                  } else {
->>>>>>> 465846b (Feat: Tela inicial de edição de um roll)
                     router.push({
                       pathname: '/vizualizar-coleta',
                       params: {
@@ -337,7 +308,6 @@ export default function Coleta() {
                         codigoManual: c.codigoManual,
                       },
                     });
-<<<<<<< HEAD
                   } else {
                     router.push({
                       pathname: '/editar-coleta',
@@ -346,17 +316,11 @@ export default function Coleta() {
                         codigoManual: c.codigoManual,
                       },
                     });
-=======
->>>>>>> 465846b (Feat: Tela inicial de edição de um roll)
                   }
                 }}
               >
                 <Text style={styles.buttonText}>
-<<<<<<< HEAD
                   {acao === 'visualizar' ? '👁 Ver Detalhes' : '✏️ Editar'}
-=======
-                  {modo === 'editar' ? '✏️ Editar' : '👁 Ver Detalhes'}
->>>>>>> 465846b (Feat: Tela inicial de edição de um roll)
                 </Text>
               </TouchableOpacity>
 
