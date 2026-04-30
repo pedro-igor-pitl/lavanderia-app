@@ -305,7 +305,7 @@ export default function Coleta() {
                       pathname: '/vizualizar-coleta',
                       params: {
                         clienteId: c.clienteId,
-                        codigoManual: c.codigoManual,
+                        rollId: c.id,
                       },
                     });
                   } else {
@@ -313,7 +313,7 @@ export default function Coleta() {
                       pathname: '/editar-coleta',
                       params: {
                         clienteId: c.clienteId,
-                        codigoManual: c.codigoManual,
+                        rollId: c.id,
                       },
                     });
                   }

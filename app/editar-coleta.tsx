@@ -13,7 +13,9 @@ import {
 import { useRouter } from 'expo-router';
 
 export default function VizualizarColeta() {
-  const params = useLocalSearchParams();
+    const params = useLocalSearchParams();
+
+    const [form, setForm] = useState<any>(null);
 
     const clienteId = Array.isArray(params.clienteId)
     ? params.clienteId[0]
@@ -25,27 +27,29 @@ export default function VizualizarColeta() {
 
     const [coleta, setColeta] = useState<any>(null);
 
-    const tipo = coleta?.peso ? 'PESO' : 'PECA';
+    const tipo = Number(form?.peso) > 0 ? 'PESO' : 'PECA';
 
-  const router = useRouter();
+    const router = useRouter();
 
     useEffect(() => {
     if (!clienteId || !codigoManual) return;
 
     const carregar = async () => {
         try {
-          const { data } = await api.get('/coleta/vizualizarColetaPorRoll', {
+          const { data } = await api.get('/coleta/visualizarColetaPorRoll', {
             params: {
               clienteId,
               codigoManual,
             },
           });
 
-        console.log('peso:', coleta?.peso);
-        console.log('valorKg:', coleta?.valorKg);
+        console.log('peso:', data?.peso);
+        console.log('valorKg:', data?.valorKg);
         console.log('Dados', data);
+        console.log('FORM ID:', form.id);
 
           setColeta(data);
+          setForm(data);
 
         } catch (error) {
         Alert.alert('Erro', 'Não foi possível carregar a coleta');
@@ -63,17 +67,17 @@ export default function VizualizarColeta() {
     };
 
     const calcularQuantidadeTotal = () => {
-      if (!coleta?.itens) return 0;
+      if (!form?.itens) return 0;
 
-      return coleta.itens.reduce((total: number, item: any) => {
+      return form.itens.reduce((total: number, item: any) => {
         return total + Number(item.quantidade || 0);
       }, 0);
     };
 
     const calcularValorTotal = () => {
-      if (!coleta?.itens) return 0;
+      if (!form?.itens) return 0;
 
-      return coleta.itens.reduce((total: number, item: any) => {
+      return form.itens.reduce((total: number, item: any) => {
         const quantidade = Number(item.quantidade || 0);
         const preco = Number(item.precoUnitario || 0);
 
@@ -82,14 +86,43 @@ export default function VizualizarColeta() {
     };
 
     const calcularTotalPeso = () => {
-      const peso = Number(coleta?.peso ?? 0);
+      const peso = Number(form?.peso ?? 0);
 
-      const valorKg =
-        Number(coleta?.valorKg ?? coleta?.valor_kg ?? coleta?.valorPorKg ?? 0);
+      const valorKg = Number(
+        form?.valorKg ?? form?.valor_kg ?? form?.valorPorKg ?? 0
+      );
 
       if (peso <= 0 || valorKg <= 0) return '0.00';
 
       return (peso * valorKg).toFixed(2);
+    };
+
+    const salvarEdicao = async () => {
+      console.log('CLICOU NO SALVAR');
+      try {
+        const payload = {
+          id: form.id,
+          codigoManual: form.codigoManual,
+          dataColeta: form.dataColeta,
+          peso: Number(form.peso),
+          valorKg: Number(form.valorKg),
+          itens: form.itens?.map((item: any) => ({
+            pecaId: item.pecaId,
+            quantidade: Number(item.quantidade),
+            precoUnitario: Number(item.precoUnitario),
+          })),
+        };
+
+        console.log('ENVIANDO:', payload);
+
+        await api.put('/coleta/atualizarColetaPorRoll', payload);
+
+        Alert.alert('Sucesso', 'Coleta atualizada!');
+        router.push('/coleta');
+      } catch (error) {
+        console.log(error);
+        Alert.alert('Erro', 'Não foi possível salvar');
+      }
     };
 
   return (
@@ -113,21 +146,34 @@ export default function VizualizarColeta() {
           {/* Número do Roll */}
           <View style={{ flex: 1, marginRight: 8 }}>
             <Text style={styles.label}>Nº Roll</Text>
-            <View style={[styles.input, styles.inputDisabledDark]}>
-              <Text style={{ color: '#fff' }}>
-                {coleta?.codigoManual || ''}
-              </Text>
-            </View>
+              <TextInput
+                style={styles.input}
+                value={form?.codigoManual?.toString() || ''}
+                onChangeText={(text) =>
+                  setForm((prev: any) => ({
+                    ...prev,
+                    codigoManual: text,
+                  }))
+                }
+              />
           </View>
 
           {/* Data */}
           <View style={{ flex: 1, marginRight: 8 }}>
             <Text style={styles.label}>Data</Text>
-            <View style={[styles.input, styles.inputDisabledDark]}>
-              <Text style={{ color: '#fff' }}>
-                {coleta?.dataColeta || ''}
-              </Text>
-            </View>
+
+            <TextInput
+              style={styles.input}
+              value={form?.dataColeta || ''}
+              placeholder="01/01/2026"
+              placeholderTextColor="#777"
+              onChangeText={(text) =>
+                setForm((prev: any) => ({
+                  ...prev,
+                  dataColeta: text,
+                }))
+              }
+            />
           </View>
 
         </View>
@@ -141,27 +187,46 @@ export default function VizualizarColeta() {
             {/* Peso */}
             <View style={{ flex: 1, marginRight: 8 }}>
               <Text style={styles.label}>Peso (kg)</Text>
-              <View style={[styles.input, styles.inputDisabledDark]}>
-                <Text style={{ color: '#fff' }}>
-                  {coleta?.peso?.toString() || ''}
-                </Text>
-              </View>
+
+              <TextInput
+                style={styles.input}
+                value={form?.peso?.toString() || ''}
+                keyboardType="numeric"
+                onChangeText={(text) =>
+                  setForm((prev: any) => ({
+                    ...prev,
+                    peso: text,
+                  }))
+                }
+              />
             </View>
 
-            
-            {/* Preço Unitario */}
+            {/* Preço Unitário */}
             <View style={{ flex: 1, marginRight: 8 }}>
-              <Text style={styles.label}>Preço Unitario</Text>
-              <View style={[styles.input, styles.inputDisabledDark]}>
-                <Text style={{ color: '#fff' }}>
-                  {coleta?.valorKg?.toString() || ''}
-                </Text>
-              </View>
+              <Text style={styles.label}>Preço Unitário</Text>
+
+              <TextInput
+                style={styles.input}
+                value={
+                  (form?.valorKg ??
+                    form?.valor_kg ??
+                    form?.valorPorKg ??
+                    '').toString()
+                }
+                keyboardType="numeric"
+                onChangeText={(text) =>
+                  setForm((prev: any) => ({
+                    ...prev,
+                    valorKg: text,
+                  }))
+                }
+              />
             </View>
 
             {/* Total */}
             <View style={{ flex: 1, marginLeft: 8 }}>
               <Text style={styles.label}>Total</Text>
+
               <View style={[styles.input, styles.inputDisabledDark]}>
                 <Text style={{ color: '#009b1a' }}>
                   R$ {calcularTotalPeso()}
@@ -176,42 +241,59 @@ export default function VizualizarColeta() {
       {/* Peças */}
       {tipo === 'PECA' && (
         <View style={styles.card}>
-          {coleta?.itens?.map((item: any) => (
+          {form?.itens?.map((item: any, index: number) => (
             <View key={item.pecaId} style={styles.pecaItem}>
               <Text style={styles.pecaNome}>{item.nomePeca}</Text>
 
               <View style={styles.rowBetween}>
+
+                {/* Quantidade */}
                 <View style={{ flex: 1, marginRight: 8 }}>
-                    <Text style={styles.pecaNome}>Quantidade</Text>
-                    <View style={[styles.input, styles.inputDisabledDark]}>
-                      <Text style={{ color: '#fff' }}>
-                        {item.quantidade}
-                      </Text>
-                    </View>
+                  <Text style={styles.pecaNome}>Quantidade</Text>
+
+                  <TextInput
+                    style={styles.input}
+                    value={item.quantidade?.toString() || ''}
+                    keyboardType="numeric"
+                    onChangeText={(text) => {
+                      const novosItens = [...form.itens];
+                      novosItens[index].quantidade = text;
+
+                      setForm((prev: any) => ({
+                        ...prev,
+                        itens: novosItens,
+                      }));
+                    }}
+                  />
                 </View>
 
-              {/* Preço Unitario */}
-              <View style={{ flex: 1, marginRight: 8 }}>
-                <Text style={styles.pecaNome}>Preço Unitario</Text>
-                <View style={[styles.input, styles.inputDisabledDark]}>
-                  <Text style={{ color: '#fff' }}>
-                    {item.precoUnitario}
-                  </Text>
-                </View>
-              </View>
+                {/* Preço Unitário */}
+                <View style={{ flex: 1, marginRight: 8 }}>
+                  <Text style={styles.pecaNome}>Preço Unitário</Text>
 
+                  <View style={[styles.input, styles.inputDisabledDark]}>
+                    <Text style={{ color: '#fff' }}>
+                      {item.precoUnitario}
+                    </Text>
+                  </View>
+                </View>
+
+                {/* Total */}
                 <View style={{ flex: 1, marginLeft: 8 }}>
                   <Text style={styles.pecaNome}>Total</Text>
-                    <View style={[styles.input, styles.inputDisabledDark]}>
-                      <Text style={{ color: '#009b1a' }}>
-                        R$ {calcularTotal(item)}
-                      </Text>
-                    </View>
-                </View>
-              </View>
 
+                  <View style={[styles.input, styles.inputDisabledDark]}>
+                    <Text style={{ color: '#009b1a' }}>
+                      R$ {calcularTotal(item)}
+                    </Text>
+                  </View>
+                </View>
+
+              </View>
             </View>
           ))}
+        </View>
+      )}
 
       <View style={styles.card}>
         <View style={styles.rowBetween}>
@@ -239,17 +321,10 @@ export default function VizualizarColeta() {
 
         <TouchableOpacity 
             style={styles.button}             
-            onPress={() => {
-              SalvarNovaColeta();
-              router.push('/coleta');
-            }}>
+            onPress={salvarEdicao}
+        >
           <Text style={styles.buttonText}>Salvar</Text>
         </TouchableOpacity>
-
-      </View>
-
-        
-      )}
     </ScrollView>
   );
 }

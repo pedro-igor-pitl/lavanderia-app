@@ -19,41 +19,37 @@ export default function VizualizarColeta() {
     ? params.clienteId[0]
     : params.clienteId;
 
-    const codigoManual = Array.isArray(params.codigoManual)
-    ? params.codigoManual[0]
-    : params.codigoManual;
+    const rollId = Array.isArray(params.rollId)
+      ? params.rollId[0]
+      : params.rollId;
 
     const [coleta, setColeta] = useState<any>(null);
 
     const tipo = coleta?.peso ? 'PESO' : 'PECA';
 
-  const router = useRouter();
+    const router = useRouter();
 
     useEffect(() => {
-    if (!clienteId || !codigoManual) return;
+      if (!clienteId || !rollId) return;
 
-    const carregar = async () => {
+      const carregar = async () => {
         try {
-          const { data } = await api.get('/coleta/vizualizarColetaPorRoll', {
+          const { data } = await api.get('/coleta/visualizarColetaPorRoll', {
             params: {
               clienteId,
-              codigoManual,
+              rollId,
             },
           });
-
-        console.log('peso:', coleta?.peso);
-        console.log('valorKg:', coleta?.valorKg);
-        console.log('Dados', data);
 
           setColeta(data);
 
         } catch (error) {
-        Alert.alert('Erro', 'Não foi possível carregar a coleta');
+          Alert.alert('Erro', 'Não foi possível carregar a coleta');
         }
-    };
+      };
 
-    carregar();
-    }, [clienteId, codigoManual]);
+      carregar();
+    }, [clienteId, rollId]);
 
     const calcularTotal = (item: any) => {
       const quantidade = Number(item.quantidade || 0);
