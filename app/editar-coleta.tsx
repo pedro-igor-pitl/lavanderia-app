@@ -21,9 +21,9 @@ export default function VizualizarColeta() {
     ? params.clienteId[0]
     : params.clienteId;
 
-    const codigoManual = Array.isArray(params.codigoManual)
-    ? params.codigoManual[0]
-    : params.codigoManual;
+    const rollId = Array.isArray(params.rollId)
+      ? params.rollId[0]
+      : params.rollId;
 
     const [coleta, setColeta] = useState<any>(null);
 
@@ -32,32 +32,30 @@ export default function VizualizarColeta() {
     const router = useRouter();
 
     useEffect(() => {
-    if (!clienteId || !codigoManual) return;
+      if (!clienteId || !rollId) return;
 
-    const carregar = async () => {
+      const carregar = async () => {
         try {
           const { data } = await api.get('/coleta/visualizarColetaPorRoll', {
             params: {
               clienteId,
-              codigoManual,
+              rollId,
             },
           });
 
-        console.log('peso:', data?.peso);
-        console.log('valorKg:', data?.valorKg);
-        console.log('Dados', data);
-        console.log('FORM ID:', form.id);
+          console.log('Dados', data);
 
-          setColeta(data);
           setForm(data);
+          setColeta(data);
 
-        } catch (error) {
-        Alert.alert('Erro', 'Não foi possível carregar a coleta');
+        } catch (error: any) {
+          console.log('ERRO:', error?.response?.data || error);
+          Alert.alert('Erro', 'Não foi possível carregar a coleta');
         }
-    };
+      };
 
-    carregar();
-    }, [clienteId, codigoManual]);
+      carregar();
+    }, [clienteId, rollId]);
 
     const calcularTotal = (item: any) => {
       const quantidade = Number(item.quantidade || 0);
@@ -101,19 +99,20 @@ export default function VizualizarColeta() {
       console.log('CLICOU NO SALVAR');
       try {
         const payload = {
-          id: form.id,
-          codigoManual: form.codigoManual,
-          dataColeta: form.dataColeta,
+          id: rollId,
+          codigo_manual: form.codigoManual,
+          data_coleta: form.dataColeta,
+          cliente_id: clienteId,
           peso: Number(form.peso),
-          valorKg: Number(form.valorKg),
           itens: form.itens?.map((item: any) => ({
-            pecaId: item.pecaId,
+            peca_id: item.pecaId,
             quantidade: Number(item.quantidade),
-            precoUnitario: Number(item.precoUnitario),
+            preco_unitario: Number(item.precoUnitario),
           })),
         };
 
         console.log('ENVIANDO:', payload);
+        console.log('ID SENDO ENVIADO:', form.id);
 
         await api.put('/coleta/atualizarColetaPorRoll', payload);
 
