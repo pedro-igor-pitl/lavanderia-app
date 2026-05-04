@@ -95,6 +95,26 @@ export default function VizualizarColeta() {
       return (peso * valorKg).toFixed(2);
     };
 
+    const removerItem = (pecaId: string) => {
+      console.log('REMOVENDO:', pecaId);
+
+      setForm((prev: any) => {
+        console.log('ANTES:', prev.itens);
+
+        const novosItens = prev.itens.filter(
+          (item: any) => (item.pecaId || item.peca_id) !== pecaId
+        );
+
+        console.log('DEPOIS:', novosItens);
+
+        return {
+          ...prev,
+          itens: novosItens,
+        };
+      });
+    };
+
+
     const salvarEdicao = async () => {
       console.log('CLICOU NO SALVAR');
       try {
@@ -126,7 +146,7 @@ export default function VizualizarColeta() {
 
   return (
     <ScrollView style={styles.container}>
-      <Text style={styles.titulo}>Vizualizar Coleta</Text>
+      <Text style={styles.titulo}>Editar Coleta</Text>
 
       {/* Dados do Roll */}
       <View style={styles.card}>
@@ -242,6 +262,13 @@ export default function VizualizarColeta() {
         <View style={styles.card}>
           {form?.itens?.map((item: any, index: number) => (
             <View key={item.pecaId} style={styles.pecaItem}>
+              <TouchableOpacity
+                onPress={() => removerItem(item.pecaId)}
+                style={styles.botaoRemover}
+              >
+                <Text style={styles.textoRemover}>✕</Text>
+              </TouchableOpacity>
+
               <Text style={styles.pecaNome}>{item.nomePeca}</Text>
 
               <View style={styles.rowBetween}>
@@ -329,6 +356,25 @@ export default function VizualizarColeta() {
 }
 
 const styles = StyleSheet.create({
+    botaoRemover: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    backgroundColor: '#ff4d4f',
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 10,
+  },
+
+  textoRemover: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 14,
+  },
+
   button: {
     backgroundColor: '#2563EB',
     padding: 16,
@@ -400,6 +446,7 @@ const styles = StyleSheet.create({
 
   pecaItem: {
     marginBottom: 12,
+    position: 'relative',
   },
 
   pecaNome: {
