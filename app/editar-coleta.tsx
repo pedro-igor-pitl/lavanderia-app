@@ -114,6 +114,16 @@ export default function VizualizarColeta() {
       });
     };
 
+    const AdicionarNovaPeca = async () => {
+      try {
+        const {data} = await api.get(`/cliente/buscarClienteCompleto/${clienteId}`);
+
+        console.log(data);
+      } catch (error: any) {
+        console.log('ERRO:', error?.response?.data || error);
+        Alert.alert('Erro', 'Não foi possível carregar a coleta');
+      }
+    }
 
     const salvarEdicao = async () => {
       console.log('CLICOU NO SALVAR');
@@ -318,6 +328,16 @@ export default function VizualizarColeta() {
               </View>
             </View>
           ))}
+          <View style={{ flex: 1}}>
+              <TouchableOpacity
+                style={[styles.button, { backgroundColor: '#32553f', marginTop: 10 }]}
+                onPress={() => {
+                  AdicionarNovaPeca();
+                }}
+              >
+                <Text style={styles.buttonText}>+ Adicionar Peça</Text>
+              </TouchableOpacity>
+          </View>
         </View>
       )}
 
