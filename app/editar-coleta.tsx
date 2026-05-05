@@ -9,11 +9,18 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  Modal,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 
 export default function VizualizarColeta() {
     const params = useLocalSearchParams();
+
+    const [pecas, setPecas] = useState<any[]>([]);
+    const [pecasSelecionadas, setPecasSelecionadas] = useState<any[]>([]);
+
+
+    const [modalVisible, setModalVisible] = useState(false);
 
     const [form, setForm] = useState<any>(null);
 
@@ -114,16 +121,51 @@ export default function VizualizarColeta() {
       });
     };
 
+    const confirmarSelecao = () => {
+      setForm((prev: any) => ({
+        ...prev,
+        itens: [
+          ...(prev.itens || []),
+          ...pecasSelecionadas.map((peca) => ({
+            pecaId: peca.pecaId,
+            nomePeca: peca.nome,
+            quantidade: 1,
+            precoUnitario: peca.precoCliente,
+          }))
+        ]
+      }));
+
+      setPecasSelecionadas([]);
+      setModalVisible(false);
+    };
+
+
     const AdicionarNovaPeca = async () => {
       try {
-        const {data} = await api.get(`/cliente/buscarClienteCompleto/${clienteId}`);
+        const { data } = await api.get(
+          `/cliente/buscarClienteCompleto/${clienteId}`
+        );
 
-        console.log(data);
+        setPecas(data.pecas || []);
+        setModalVisible(true);
+
       } catch (error: any) {
         console.log('ERRO:', error?.response?.data || error);
-        Alert.alert('Erro', 'Não foi possível carregar a coleta');
+        Alert.alert('Erro', 'Não foi possível carregar peças');
       }
-    }
+    };
+
+    const togglePeca = (peca: any) => {
+      setPecasSelecionadas((prev) => {
+        const existe = prev.find(p => p.pecaId === peca.pecaId);
+
+        if (existe) {
+          return prev.filter(p => p.pecaId !== peca.pecaId);
+        }
+
+        return [...prev, peca];
+      });
+    };
 
     const salvarEdicao = async () => {
       console.log('CLICOU NO SALVAR');
@@ -371,6 +413,58 @@ export default function VizualizarColeta() {
         >
           <Text style={styles.buttonText}>Salvar</Text>
         </TouchableOpacity>
+
+
+      {/* MODAL */}
+      <Modal visible={modalVisible} animationType="slide">
+        <View style={styles.modalHeader}>
+          <Text style={styles.title}>
+            Selecionar Peças vinculadas ao {coleta?.clienteNome}
+          </Text>
+
+          <TouchableOpacity
+            style={styles.closeContainer}
+            onPress={() => setModalVisible(false)}
+          >
+            <Text style={styles.closeButton}>✕</Text>
+          </TouchableOpacity>
+        </View>
+        <View style={[styles.modalContainer, { paddingTop: 0 }]}>
+
+          <ScrollView>
+            {pecas.map((item) => {
+              const selecionada = pecasSelecionadas.find(
+                p => p.pecaId === item.pecaId
+              );
+
+              return (
+                <TouchableOpacity
+                  key={item.id}
+                  style={[
+                    styles.itemLista,
+                    selecionada && styles.itemSelecionado
+                  ]}
+                  onPress={() => togglePeca(item)}
+                  activeOpacity={0.6}
+                >
+                  <Text style={styles.itemTexto}>{item.nome}</Text>
+
+                  <View style={styles.checkBox}>
+                    {selecionada && <Text style={styles.check}>✔</Text>}
+                  </View>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+
+          <TouchableOpacity
+            style={styles.button}
+            onPress={confirmarSelecao}
+          >
+            <Text style={styles.buttonText}>Confirmar</Text>
+          </TouchableOpacity>
+        </View>
+      </Modal>
     </ScrollView>
   );
 }
