@@ -470,6 +470,83 @@ export default function VizualizarColeta() {
 }
 
 const styles = StyleSheet.create({
+  
+  itemLista: {
+    backgroundColor: '#1A1A1D',
+    padding: 16,
+    borderRadius: 12,
+    marginTop: 10,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#2A2A2C',
+  },
+
+  itemSelecionado: {
+    borderColor: '#2563EB',
+    backgroundColor: '#1E293B',
+    shadowColor: '#2563EB',
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+
+  itemTexto: {
+    color: '#E5E7EB',
+    fontWeight: '600',
+    fontSize: 15,
+  },
+
+  checkBox: {
+    width: 26,
+    height: 26,
+    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: '#3A3A3C',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  check: {
+    color: '#00FF88',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+    modalContainer: {
+    flex: 1,
+    backgroundColor: '#0F0F0F',
+    padding: 20,
+  },
+    closeButton: {
+    color: '#FF4D4D',
+    fontSize: 18,
+    fontWeight: '700',
+  },
+    closeContainer: {
+    backgroundColor: '#1F1F22',
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#2A2A2C',
+  },
+    title: {
+    color: '#fff',
+    fontSize: 22,
+    marginBottom: 20,
+  },
+    modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 20,
+    paddingBottom: 10,
+    backgroundColor: '#0F0F0F',
+    borderBottomWidth: 1,
+    borderBottomColor: '#1F1F22',
+  },
     botaoRemover: {
     position: 'absolute',
     top: 0,
