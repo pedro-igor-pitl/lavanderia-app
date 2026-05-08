@@ -146,7 +146,17 @@ export default function VizualizarColeta() {
           `/cliente/buscarClienteCompleto/${clienteId}`
         );
 
-        setPecas(data.pecas || []);
+        const itensAtuais = form?.itens || [];
+
+        const idsJaSelecionados = new Set(
+          itensAtuais.map((item: any) => item.pecaId)
+        );
+
+        const pecasFiltradas = (data.pecas || []).filter(
+          (peca: any) => !idsJaSelecionados.has(peca.pecaId)
+        );
+
+        setPecas(pecasFiltradas);
         setModalVisible(true);
 
       } catch (error: any) {
@@ -431,8 +441,15 @@ export default function VizualizarColeta() {
         </View>
         <View style={[styles.modalContainer, { paddingTop: 0 }]}>
 
-          <ScrollView>
-            {pecas.map((item) => {
+        <ScrollView>
+          {pecas.length === 0 ? (
+            <View style={styles.emptyContainer}>
+              <Text style={styles.modalPecaVazio}>
+                Todas as peças para o cliente já foram selecionadas
+              </Text>
+            </View>
+          ) : (
+            pecas.map((item) => {
               const selecionada = pecasSelecionadas.find(
                 p => p.pecaId === item.pecaId
               );
@@ -454,8 +471,9 @@ export default function VizualizarColeta() {
                   </View>
                 </TouchableOpacity>
               );
-            })}
-          </ScrollView>
+            })
+          )}
+        </ScrollView>
 
           <TouchableOpacity
             style={styles.button}
@@ -470,7 +488,18 @@ export default function VizualizarColeta() {
 }
 
 const styles = StyleSheet.create({
-  
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  modalPecaVazio: {
+    color: '#7a7a7a',
+    fontWeight: '600',
+    fontSize: 20,
+    textAlign: 'center',
+  },
   itemLista: {
     backgroundColor: '#1A1A1D',
     padding: 16,
