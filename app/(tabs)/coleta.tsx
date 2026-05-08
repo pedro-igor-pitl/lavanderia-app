@@ -7,12 +7,14 @@ import {
   TextInput,
   ScrollView,
 } from 'react-native';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import api from '../services/api';
 import { useRouter } from 'expo-router';
 import { Modal } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { useMemo } from 'react';
+import { Animated } from 'react-native';
+import { MaterialIcons } from '@expo/vector-icons';
 
 export default function Coleta() {
   const [modo, setModo] = useState<'menu' | 'manual' | 'visualizar'>('menu');
@@ -30,6 +32,24 @@ export default function Coleta() {
   const [coletas, setColetas] = useState<any[]>([]);
 
   const [search, setSearch] = useState('');
+
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+
+  const animateToggle = () => {
+    Animated.sequence([
+      Animated.timing(scaleAnim, {
+        toValue: 0.8,
+        duration: 80,
+        useNativeDriver: true,
+      }),
+      Animated.timing(scaleAnim, {
+        toValue: 1,
+        duration: 120,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  };
+
 
   const clientesFiltrados = useMemo(() => {
     return clientes.filter((c) =>
@@ -95,6 +115,24 @@ export default function Coleta() {
     setClienteSelecionado(null);
     setDataInicio('');
     setDataFim('');
+  };
+
+  const atualizarStatus = async (id: string, ativo: boolean) => {
+    try {
+      const novoStatus = !ativo;
+
+      await api.patch(`/coleta/atualizarStatus/${id}`, {
+        ativo: novoStatus,
+      });
+
+      setColetas((prev) =>
+        prev.map((c) =>
+          c.id === id ? { ...c, ativo: novoStatus } : c
+        )
+      );
+    } catch (error) {
+      Alert.alert('Erro', 'Não foi possível atualizar status');
+    }
   };
 
   return (
@@ -296,6 +334,22 @@ export default function Coleta() {
               <Text style={styles.text}>Cliente: {c.clienteNome}</Text>
               <Text style={styles.text}>Roll: {c.codigoManual}</Text>
               <Text style={styles.text}>Data: {c.dataColeta}</Text>
+              <TouchableOpacity
+                onPress={() => {
+                  animateToggle();
+                  atualizarStatus(c.id, c.ativo);
+                  }}
+                style={styles.statusButton}
+                activeOpacity={0.7}
+              >
+                <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
+                  <MaterialIcons
+                    name={c.ativo ? 'toggle-on' : 'toggle-off'}
+                    size={40}
+                    color={c.ativo ? '#22C55E' : '#EF4444'}
+                  />
+                </Animated.View>
+              </TouchableOpacity>
 
               <TouchableOpacity
                 style={[styles.button, { marginTop: 10 }]}
@@ -334,6 +388,11 @@ export default function Coleta() {
 }
 
 const styles = StyleSheet.create({
+  statusButton: {
+    padding: 6,
+    borderRadius: 10,
+    alignSelf: 'flex-start',
+  },
   blurContainer: {
     flex: 1,
     justifyContent: 'center',
