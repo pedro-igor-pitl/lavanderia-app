@@ -334,6 +334,7 @@ export default function Coleta() {
               <Text style={styles.text}>Cliente: {c.clienteNome}</Text>
               <Text style={styles.text}>Roll: {c.codigoManual}</Text>
               <Text style={styles.text}>Data: {c.dataColeta}</Text>
+              <Text style={styles.text}>Status: </Text>
               <TouchableOpacity
                 onPress={() => {
                   animateToggle();
@@ -352,25 +353,29 @@ export default function Coleta() {
               </TouchableOpacity>
 
               <TouchableOpacity
-                style={[styles.button, { marginTop: 10 }]}
+                style={[
+                  styles.button,
+                  {
+                    marginTop: 10,
+                    opacity: c.ativo ? 1 : 0.4,
+                  },
+                ]}
+                disabled={!c.ativo}
                 onPress={() => {
-                  if (acao === 'visualizar') {
-                    router.push({
-                      pathname: '/vizualizar-coleta',
-                      params: {
-                        clienteId: c.clienteId,
-                        rollId: c.id,
-                      },
-                    });
-                  } else {
-                    router.push({
-                      pathname: '/editar-coleta',
-                      params: {
-                        clienteId: c.clienteId,
-                        rollId: c.id,
-                      },
-                    });
+                  if (!c.ativo) {
+                    Alert.alert('Bloqueado', 'Essa coleta está inativa');
+                    return;
                   }
+
+                  router.push({
+                    pathname: acao === 'visualizar'
+                      ? '/vizualizar-coleta'
+                      : '/editar-coleta',
+                    params: {
+                      clienteId: c.clienteId,
+                      rollId: c.id,
+                    },
+                  });
                 }}
               >
                 <Text style={styles.buttonText}>
