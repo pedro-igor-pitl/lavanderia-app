@@ -14,6 +14,7 @@ import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
 import api from '../app/services/api';
 import { Asset } from 'expo-asset';
+import { Platform } from 'react-native';
 
 interface RelatorioItem {
     clienteNome: string;
@@ -149,16 +150,27 @@ export default function FaturamentoPeriodo() {
     const temPeso = rollsPeso.length > 0;
     const temPeca = rollsPeca.length > 0;
 
-      const gerarPDF = async () => {
+    const gerarPDF = async () => {
         try {
 
+            const asset = Asset.fromModule(
+                require('../assets/images/logoEmpresa/lux_lav_lavanderia_logo.jpeg')
+            );
+
+            await asset.downloadAsync();
+
+            const logoUri = asset.localUri || asset.uri;
+
             const logoBase64 = await getBase64Logo();
+
+            const logoSrc = logoBase64;
 
             const html = `
             <html>
 
             <head>
                 <style>
+
                     body {
                         font-family: Arial;
                         padding: 20px;
@@ -167,18 +179,21 @@ export default function FaturamentoPeriodo() {
 
                     .header {
                         width: 100%;
-                        margin-bottom: 20px;
+                        margin-bottom: 5px;
                         text-align: center;
                     }
 
                     .logo {
                         width: 180px;
-                        height: auto;
+                        height: 60px;
+                        object-fit: contain;
+                        display: block;
+                        margin: 0 auto;
                     }
 
                     .cliente {
                         text-align: center;
-                        margin-bottom: 30px;
+                        margin-bottom: 15px;
                     }
 
                     .cliente h1 {
@@ -246,142 +261,150 @@ export default function FaturamentoPeriodo() {
             </head>
 
             <body>
-
                 <div class="header">
 
                     <img
                         class="logo"
-                        src="${logoBase64}"
+                        src="${logoSrc}"
                     />
 
                 </div>
 
                 <div class="cliente">
+
                     <h1>${dados[0]?.clienteNome}</h1>
 
                     <p>
                         ${inicio} - ${fim}
                     </p>
+
                 </div>
 
-            ${temPeso ? `
-                <h2>Rolls por Peso</h2>
+                ${temPeso ? `
+                    <h2>Rolls por Peso</h2>
 
-                <table>
+                    <table>
 
-                    <tr>
-                        <th>Roll</th>
-                        <th>Data</th>
-                        <th>Peso</th>
-                        <th>Valor KG</th>
-                        <th>Total</th>
-                    </tr>
-
-                    ${rollsPeso.map(item => `
                         <tr>
-                            <td>${item.codigoManual}</td>
-
-                            <td>
-                                ${formatarDataBarra(item.dataColeta)}
-                            </td>
-
-                            <td>${item.peso} KG</td>
-
-                            <td>
-                                R$ ${item.precoUnitario}
-                            </td>
-
-                            <td>
-                                R$ ${(
-                                    Number(item.peso || 0) *
-                                    Number(item.precoUnitario || 0)
-                                ).toFixed(2)}
-                            </td>
+                            <th>Roll</th>
+                            <th>Data</th>
+                            <th>Peso</th>
+                            <th>Valor KG</th>
+                            <th>Total</th>
                         </tr>
-                    `).join('')}
 
-                    <tr class="totalRow">
-                        <td>Total por Peso</td>
-                        <td></td>
+                        ${rollsPeso.map(item => `
+                            <tr>
 
-                        <td>
-                            ${totalKg.toFixed(2)} KG
-                        </td>
+                                <td>${item.codigoManual}</td>
 
-                        <td></td>
+                                <td>
+                                    ${formatarDataBarra(item.dataColeta)}
+                                </td>
 
-                        <td>
-                            R$ ${totalReaisPeso.toFixed(2)}
-                        </td>
-                    </tr>
+                                <td>${item.peso} KG</td>
 
-                </table>
-            ` : ''}
+                                <td>
+                                    R$ ${item.precoUnitario}
+                                </td>
 
-            ${temPeca ? `
-                <h2>Rolls por Peça</h2>
+                                <td>
+                                    R$ ${(
+                                        Number(item.peso || 0) *
+                                        Number(item.precoUnitario || 0)
+                                    ).toFixed(2)}
+                                </td>
 
-                <table>
+                            </tr>
+                        `).join('')}
 
-                    <tr>
-                        <th>Roll</th>
-                        <th>Data</th>
-                        <th>Peça</th>
-                        <th>Qtd</th>
-                        <th>Valor</th>
-                        <th>Total</th>
-                    </tr>
+                        <tr class="totalRow">
 
-                    ${rollsPeca.map(item => `
-                        <tr>
+                            <td>Total por Peso</td>
 
-                            <td>${item.codigoManual}</td>
+                            <td></td>
 
                             <td>
-                                ${formatarDataBarra(item.dataColeta)}
+                                ${totalKg.toFixed(2)} KG
                             </td>
 
-                            <td>${item.pecaNome}</td>
-
-                            <td>${item.quantidade}</td>
+                            <td></td>
 
                             <td>
-                                R$ ${item.precoUnitario}
-                            </td>
-
-                            <td>
-                                R$ ${(
-                                    Number(item.quantidade || 0) *
-                                    Number(item.precoUnitario || 0)
-                                ).toFixed(2)}
+                                R$ ${totalReaisPeso.toFixed(2)}
                             </td>
 
                         </tr>
-                    `).join('')}
 
-                    <tr class="totalRow">
+                    </table>
+                ` : ''}
 
-                        <td>Total por Peça</td>
+                ${temPeca ? `
+                    <h2>Rolls por Peça</h2>
 
-                        <td></td>
+                    <table>
 
-                        <td></td>
+                        <tr>
+                            <th>Roll</th>
+                            <th>Data</th>
+                            <th>Peça</th>
+                            <th>Qtd</th>
+                            <th>Valor</th>
+                            <th>Total</th>
+                        </tr>
 
-                        <td>${totalPecas}</td>
+                        ${rollsPeca.map(item => `
+                            <tr>
 
-                        <td></td>
+                                <td>${item.codigoManual}</td>
 
-                        <td>
-                            R$ ${totalReaisPeca.toFixed(2)}
-                        </td>
+                                <td>
+                                    ${formatarDataBarra(item.dataColeta)}
+                                </td>
 
-                    </tr>
+                                <td>${item.pecaNome}</td>
 
-                </table>
-            ` : ''}
+                                <td>${item.quantidade}</td>
+
+                                <td>
+                                    R$ ${item.precoUnitario}
+                                </td>
+
+                                <td>
+                                    R$ ${(
+                                        Number(item.quantidade || 0) *
+                                        Number(item.precoUnitario || 0)
+                                    ).toFixed(2)}
+                                </td>
+
+                            </tr>
+                        `).join('')}
+
+                        <tr class="totalRow">
+
+                            <td>Total por Peça</td>
+
+                            <td></td>
+
+                            <td></td>
+
+                            <td>${totalPecas}</td>
+
+                            <td></td>
+
+                            <td>
+                                R$ ${totalReaisPeca.toFixed(2)}
+                            </td>
+
+                        </tr>
+
+                    </table>
+                ` : ''}
+
                 <div class="footer">
 
                     <div class="footerBox">
+
                         <div class="footerTitle">
                             Total KG
                         </div>
@@ -389,9 +412,11 @@ export default function FaturamentoPeriodo() {
                         <div class="footerValue">
                             ${totalKg.toFixed(2)} KG
                         </div>
+
                     </div>
 
                     <div class="footerBox">
+
                         <div class="footerTitle">
                             Total Peças
                         </div>
@@ -399,9 +424,11 @@ export default function FaturamentoPeriodo() {
                         <div class="footerValue">
                             ${totalPecas}
                         </div>
+
                     </div>
 
                     <div class="footerBox">
+
                         <div class="footerTitle">
                             Total em Reais
                         </div>
@@ -409,6 +436,7 @@ export default function FaturamentoPeriodo() {
                         <div class="footerValue">
                             R$ ${totalReais.toFixed(2)}
                         </div>
+
                     </div>
 
                 </div>
@@ -417,6 +445,26 @@ export default function FaturamentoPeriodo() {
 
             </html>
             `;
+
+            if (Platform.OS === 'web') {
+
+                const win = window.open('', '_blank');
+
+            if (win) {
+
+                win.document.write(html);
+
+                win.document.close();
+
+                win.onload = () => {
+                    setTimeout(() => {
+                        win.print();
+                    }, 500);
+                };
+            }
+
+                return;
+            }
 
             const { uri } = await Print.printToFileAsync({
                 html,
